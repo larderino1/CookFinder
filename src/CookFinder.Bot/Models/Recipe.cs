@@ -16,5 +16,7 @@ public sealed class Recipe
     public IReadOnlyList<Ingredient> Ingredients { get; init; } = Array.Empty<Ingredient>();
     public IReadOnlyList<RecipeStep> Steps { get; init; } = Array.Empty<RecipeStep>();
     public IReadOnlyList<string> Categories { get; init; } = Array.Empty<string>();
+    public bool IsFavorite { get; init; }
+    public NutritionInfo? Nutrition { get; init; }
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
 }

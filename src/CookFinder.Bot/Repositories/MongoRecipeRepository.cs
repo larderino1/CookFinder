@@ -39,6 +39,49 @@ public sealed class MongoRecipeRepository : IRecipeRepository
         return await _recipes.Find(filter).ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<Recipe>> SearchByIngredientAsync(long userId, string ingredient, CancellationToken cancellationToken)
+    {
+        var filter = Builders<Recipe>.Filter.And(
+            Builders<Recipe>.Filter.Eq(r => r.UserId, userId),
+            Builders<Recipe>.Filter.ElemMatch(r => r.Ingredients,
+                Builders<Ingredient>.Filter.Regex(i => i.Name, new MongoDB.Bson.BsonRegularExpression(ingredient, "i"))));
+
+        return await _recipes.Find(filter).ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Recipe>> GetFavoritesAsync(long userId, CancellationToken cancellationToken)
+    {
+        var filter = Builders<Recipe>.Filter.And(
+            Builders<Recipe>.Filter.Eq(r => r.UserId, userId),
+            Builders<Recipe>.Filter.Eq(r => r.IsFavorite, true));
+
+        return await _recipes.Find(filter).ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<Recipe>> GetAllAsync(long userId, CancellationToken cancellationToken)
+    {
+        var filter = Builders<Recipe>.Filter.Eq(r => r.UserId, userId);
+        return await _recipes.Find(filter).ToListAsync(cancellationToken);
+    }
+
+    public async Task<Recipe?> GetByIdAsync(long userId, string id, CancellationToken cancellationToken)
+    {
+        var filter = Builders<Recipe>.Filter.And(
+            Builders<Recipe>.Filter.Eq(r => r.UserId, userId),
+            Builders<Recipe>.Filter.Eq(r => r.Id, id));
+
+        return await _recipes.Find(filter).FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task SetFavoriteAsync(long userId, string id, bool isFavorite, CancellationToken cancellationToken)
+    {
+        var filter = Builders<Recipe>.Filter.And(
+            Builders<Recipe>.Filter.Eq(r => r.UserId, userId),
+            Builders<Recipe>.Filter.Eq(r => r.Id, id));
+        var update = Builders<Recipe>.Update.Set(r => r.IsFavorite, isFavorite);
+        await _recipes.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
+    }
+
     public async Task<IReadOnlyList<string>> GetCategoriesAsync(long userId, CancellationToken cancellationToken)
     {
         var filter = Builders<Recipe>.Filter.Eq(r => r.UserId, userId);

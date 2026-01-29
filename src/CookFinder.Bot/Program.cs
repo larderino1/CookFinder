@@ -32,6 +32,9 @@ var host = Host.CreateDefaultBuilder(args)
         });
 
         services.AddHttpClient<OpenAiRecipeParser>();
+        services.AddHttpClient<OpenAiRecipeCategorizer>();
+        services.AddHttpClient<OpenAiRecipeTranslationService>();
+        services.AddHttpClient<OpenAiRecipeNutritionService>();
         services.AddHttpClient<YouTubeMetadataClient>();
         services.AddHttpClient<InstagramMetadataClient>();
         services.AddHttpClient<TikTokMetadataClient>();
@@ -39,6 +42,8 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<IRecipeRepository, MongoRecipeRepository>();
         services.AddSingleton<IUserPreferenceRepository, MongoUserPreferenceRepository>();
         services.AddSingleton<ILocalizationService, ResourceLocalizationService>();
+        services.AddSingleton<IRecipeTranslationService, OpenAiRecipeTranslationService>();
+        services.AddSingleton<IRecipeNutritionService, OpenAiRecipeNutritionService>();
 
         services.AddScoped<StubVideoMetadataClient>();
         services.AddSingleton<IVideoMetadataClientFactory, HostBasedVideoMetadataClientFactory>();
@@ -50,7 +55,8 @@ var host = Host.CreateDefaultBuilder(args)
             serviceProvider.GetRequiredService<IRecipeParser>(),
             serviceProvider.GetRequiredService<RuleBasedRecipeParser>(),
             serviceProvider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<RecipeExtractionPipeline>>()));
-        services.AddSingleton<IRecipeCategorizer, KeywordRecipeCategorizer>();
+        services.AddSingleton<KeywordRecipeCategorizer>();
+        services.AddSingleton<IRecipeCategorizer, OpenAiRecipeCategorizer>();
         services.AddHostedService<TelegramBotService>();
     })
     .Build();

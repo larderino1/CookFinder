@@ -15,6 +15,8 @@ public sealed class TelegramBotService(
     ITelegramBotClient botClient,
     IRecipeExtractor extractor,
     IRecipeCategorizer categorizer,
+    IRecipeTranslationService translator,
+    IRecipeNutritionService nutritionService,
     IRecipeRepository repository,
     IUserPreferenceRepository userPreferences,
     ILocalizationService localization,
@@ -70,30 +72,32 @@ public sealed class TelegramBotService(
         }
 
         var userId = message.From?.Id ?? 0;
-
-        if (message.Text.StartsWith("/start", StringComparison.OrdinalIgnoreCase))
-        {
-            await SendLanguageSelectionAsync(message.Chat.Id, cancellationToken);
-            return;
-        }
-
-        if (message.Text.StartsWith("/language", StringComparison.OrdinalIgnoreCase))
-        {
-            await SendLanguageSelectionAsync(message.Chat.Id, cancellationToken);
-            return;
-        }
-
         var language = await userPreferences.GetLanguageAsync(userId, cancellationToken);
+        var command = ParseCommand(message.Text, language);
 
-        if (message.Text.StartsWith("/categories", StringComparison.OrdinalIgnoreCase))
+        if (command.Name.Equals("start", StringComparison.OrdinalIgnoreCase))
+        {
+            await SendLanguageSelectionAsync(message.Chat.Id, cancellationToken);
+            await SendMainMenuAsync(message.Chat.Id, "en", cancellationToken);
+            return;
+        }
+
+        if (command.Name.Equals("language", StringComparison.OrdinalIgnoreCase))
+        {
+            await SendLanguageSelectionAsync(message.Chat.Id, cancellationToken);
+            await SendMainMenuAsync(message.Chat.Id, language, cancellationToken);
+            return;
+        }
+
+        if (command.Name.Equals("categories", StringComparison.OrdinalIgnoreCase))
         {
             await SendCategoriesAsync(message.Chat.Id, userId, language, cancellationToken);
             return;
         }
 
-        if (message.Text.StartsWith("/search", StringComparison.OrdinalIgnoreCase))
+        if (command.Name.Equals("search", StringComparison.OrdinalIgnoreCase))
         {
-            if (message.Text.Length <= 7)
+            if (string.IsNullOrWhiteSpace(command.Argument))
             {
                 await botClient.SendMessage(
                     message.Chat.Id,
@@ -102,8 +106,66 @@ public sealed class TelegramBotService(
                 return;
             }
 
-            var query = message.Text[8..].Trim();
+            var query = command.Argument;
             await SendSearchResultsAsync(message.Chat.Id, userId, query, language, cancellationToken);
+            return;
+        }
+
+        if (command.Name.Equals("ingredients", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(command.Argument))
+            {
+                await botClient.SendMessage(
+                    message.Chat.Id,
+                    localization.GetString("IngredientSearchHelp", language),
+                    cancellationToken: cancellationToken);
+                return;
+            }
+
+            var query = command.Argument;
+            await SendIngredientSearchResultsAsync(message.Chat.Id, userId, query, language, cancellationToken);
+            return;
+        }
+
+        if (command.Name.Equals("favorites", StringComparison.OrdinalIgnoreCase))
+        {
+            await SendFavoritesAsync(message.Chat.Id, userId, language, cancellationToken);
+            return;
+        }
+
+        if (command.Name.Equals("pantry", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(command.Argument))
+            {
+                await botClient.SendMessage(
+                    message.Chat.Id,
+                    localization.GetString("PantryHelp", language),
+                    cancellationToken: cancellationToken);
+                return;
+            }
+
+            await SendPantryMatchesAsync(message.Chat.Id, userId, command.Argument, language, cancellationToken);
+            return;
+        }
+
+        if (command.Name.Equals("nutrition", StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(command.Argument))
+            {
+                await botClient.SendMessage(
+                    message.Chat.Id,
+                    localization.GetString("NutritionHelp", language),
+                    cancellationToken: cancellationToken);
+                return;
+            }
+
+            await SendNutritionByNameAsync(message.Chat.Id, userId, command.Argument, language, cancellationToken);
+            return;
+        }
+
+        if (command.Name.Equals("info", StringComparison.OrdinalIgnoreCase))
+        {
+            await SendInfoAsync(message.Chat.Id, language, cancellationToken);
             return;
         }
 
@@ -123,30 +185,57 @@ public sealed class TelegramBotService(
 
         var draft = await extractor.ExtractAsync(userId, url, cancellationToken);
         var categories = await categorizer.CategorizeAsync(draft.Title, draft.Description, cancellationToken);
+        var translated = await translator.TranslateAsync(
+            new Recipe
+            {
+                UserId = draft.UserId,
+                SourceUrl = draft.SourceUrl,
+                Title = draft.Title,
+                Description = draft.Description,
+                Ingredients = draft.Ingredients,
+                Steps = draft.Steps,
+                Categories = categories
+            },
+            categories,
+            language,
+            cancellationToken);
+
+        var nutrition = await nutritionService.EstimateAsync(
+            new Recipe
+            {
+                UserId = draft.UserId,
+                SourceUrl = draft.SourceUrl,
+                Title = translated.Title,
+                Description = translated.Description,
+                Ingredients = translated.Ingredients,
+                Steps = translated.Steps,
+                Categories = translated.Categories
+            },
+            language,
+            cancellationToken);
 
         var recipe = new Recipe
         {
             UserId = draft.UserId,
             SourceUrl = draft.SourceUrl,
-            Title = draft.Title,
-            Description = draft.Description,
-            Ingredients = draft.Ingredients,
-            Steps = draft.Steps,
-            Categories = categories
+            Title = translated.Title,
+            Description = translated.Description,
+            Ingredients = translated.Ingredients,
+            Steps = translated.Steps,
+            Categories = translated.Categories,
+            Nutrition = nutrition
         };
 
         await repository.SaveAsync(recipe, cancellationToken);
 
-        await botClient.SendMessage(
-            message.Chat.Id,
-            RecipeFormatter.FormatSummary(recipe),
-            parseMode: ParseMode.MarkdownV2,
-            cancellationToken: cancellationToken);
+        await SendRecipeSummaryAsync(message.Chat.Id, recipe, language, cancellationToken);
 
         await botClient.SendMessage(
             message.Chat.Id,
             localization.GetString("RecipeSaved", language),
             cancellationToken: cancellationToken);
+
+        await SendMainMenuAsync(message.Chat.Id, language, cancellationToken);
     }
 
     private async Task HandleCallbackAsync(CallbackQuery query, CancellationToken cancellationToken)
@@ -166,6 +255,7 @@ public sealed class TelegramBotService(
                 localization.GetString("LanguageSet", language),
                 cancellationToken: cancellationToken);
 
+            await SendMainMenuAsync(query.Message.Chat.Id, language, cancellationToken);
             await botClient.AnswerCallbackQuery(query.Id, cancellationToken: cancellationToken);
             return;
         }
@@ -187,14 +277,82 @@ public sealed class TelegramBotService(
 
             foreach (var recipe in recipes)
             {
-                await botClient.SendMessage(
-                    query.Message.Chat.Id,
-                    RecipeFormatter.FormatSummary(recipe),
-                    parseMode: ParseMode.MarkdownV2,
-                    cancellationToken: cancellationToken);
+                await SendRecipeSummaryAsync(query.Message.Chat.Id, recipe, language, cancellationToken);
             }
 
             await botClient.AnswerCallbackQuery(query.Id, cancellationToken: cancellationToken);
+            return;
+        }
+
+        if (query.Data.StartsWith("favorite:", StringComparison.OrdinalIgnoreCase))
+        {
+            var language = await userPreferences.GetLanguageAsync(query.From.Id, cancellationToken);
+            var id = query.Data[9..];
+            var recipe = await repository.GetByIdAsync(query.From.Id, id, cancellationToken);
+
+            if (recipe is null)
+            {
+                await botClient.AnswerCallbackQuery(query.Id, cancellationToken: cancellationToken);
+                return;
+            }
+
+            var isFavorite = !recipe.IsFavorite;
+            await repository.SetFavoriteAsync(query.From.Id, id, isFavorite, cancellationToken);
+
+            await botClient.SendMessage(
+                query.Message.Chat.Id,
+                localization.GetString(isFavorite ? "FavoriteAdded" : "FavoriteRemoved", language),
+                cancellationToken: cancellationToken);
+
+            await botClient.AnswerCallbackQuery(query.Id, cancellationToken: cancellationToken);
+            return;
+        }
+
+        if (query.Data.StartsWith("nutrition:", StringComparison.OrdinalIgnoreCase))
+        {
+            var language = await userPreferences.GetLanguageAsync(query.From.Id, cancellationToken);
+            var id = query.Data[10..];
+            var recipe = await repository.GetByIdAsync(query.From.Id, id, cancellationToken);
+
+            if (recipe is null)
+            {
+                await botClient.AnswerCallbackQuery(query.Id, cancellationToken: cancellationToken);
+                return;
+            }
+
+            await SendNutritionAsync(query.Message.Chat.Id, recipe, language, cancellationToken);
+            await botClient.AnswerCallbackQuery(query.Id, cancellationToken: cancellationToken);
+            return;
+        }
+
+        if (query.Data.StartsWith("cook:", StringComparison.OrdinalIgnoreCase))
+        {
+            var language = await userPreferences.GetLanguageAsync(query.From.Id, cancellationToken);
+            var parts = query.Data.Split(':', StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length < 3)
+            {
+                await botClient.AnswerCallbackQuery(query.Id, cancellationToken: cancellationToken);
+                return;
+            }
+
+            var recipeId = parts[1];
+            if (!int.TryParse(parts[2], out var stepIndex))
+            {
+                await botClient.AnswerCallbackQuery(query.Id, cancellationToken: cancellationToken);
+                return;
+            }
+
+            var recipe = await repository.GetByIdAsync(query.From.Id, recipeId, cancellationToken);
+            if (recipe is null)
+            {
+                await botClient.AnswerCallbackQuery(query.Id, cancellationToken: cancellationToken);
+                return;
+            }
+
+            await SendCookingStepAsync(query.Message.Chat.Id, recipe, stepIndex, language, cancellationToken);
+            await botClient.AnswerCallbackQuery(query.Id, cancellationToken: cancellationToken);
+            return;
         }
     }
 
@@ -243,6 +401,332 @@ public sealed class TelegramBotService(
             cancellationToken: cancellationToken);
     }
 
+    private async Task SendMainMenuAsync(long chatId, string language, CancellationToken cancellationToken)
+    {
+        var buttons = new[]
+        {
+            new KeyboardButton[]
+            {
+                localization.GetString("MenuCategories", language),
+                localization.GetString("MenuSearch", language)
+            },
+            new KeyboardButton[]
+            {
+                localization.GetString("MenuIngredients", language),
+                localization.GetString("MenuFavorites", language)
+            },
+            new KeyboardButton[]
+            {
+                localization.GetString("MenuPantry", language),
+                localization.GetString("MenuNutrition", language)
+            },
+            new KeyboardButton[]
+            {
+                localization.GetString("MenuLanguage", language),
+                localization.GetString("MenuInfo", language)
+            }
+        };
+
+        await botClient.SendMessage(
+            chatId,
+            localization.GetString("MainMenu", language),
+            replyMarkup: new ReplyKeyboardMarkup(buttons)
+            {
+                ResizeKeyboard = true,
+                IsPersistent = true
+            },
+            cancellationToken: cancellationToken);
+    }
+
+    private async Task SendInfoAsync(long chatId, string language, CancellationToken cancellationToken)
+    {
+        await botClient.SendMessage(
+            chatId,
+            localization.GetString("InfoMessage", language),
+            cancellationToken: cancellationToken);
+    }
+
+    private async Task SendFavoritesAsync(long chatId, long userId, string language, CancellationToken cancellationToken)
+    {
+        var favorites = await repository.GetFavoritesAsync(userId, cancellationToken);
+
+        if (favorites.Count == 0)
+        {
+            await botClient.SendMessage(
+                chatId,
+                localization.GetString("FavoritesEmpty", language),
+                cancellationToken: cancellationToken);
+            return;
+        }
+
+        await botClient.SendMessage(
+            chatId,
+            localization.GetString("FavoritesTitle", language),
+            cancellationToken: cancellationToken);
+
+        foreach (var recipe in favorites)
+        {
+            await SendRecipeSummaryAsync(chatId, recipe, language, cancellationToken);
+        }
+    }
+
+    private async Task SendPantryMatchesAsync(long chatId, long userId, string pantryInput, string language, CancellationToken cancellationToken)
+    {
+        var ingredients = pantryInput.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (ingredients.Length == 0)
+        {
+            await botClient.SendMessage(
+                chatId,
+                localization.GetString("PantryMissing", language),
+                cancellationToken: cancellationToken);
+            return;
+        }
+
+        var recipes = await repository.GetAllAsync(userId, cancellationToken);
+        var matches = recipes
+            .Select(recipe => new
+            {
+                Recipe = recipe,
+                MatchCount = recipe.Ingredients.Count(ingredient =>
+                    ingredients.Any(item => ingredient.Name.Contains(item, StringComparison.OrdinalIgnoreCase)))
+            })
+            .Where(result => result.MatchCount > 0)
+            .OrderByDescending(result => result.MatchCount)
+            .ThenBy(result => result.Recipe.Title)
+            .ToList();
+
+        if (matches.Count == 0)
+        {
+            await botClient.SendMessage(
+                chatId,
+                localization.GetString("PantryNone", language),
+                cancellationToken: cancellationToken);
+            return;
+        }
+
+        await botClient.SendMessage(
+            chatId,
+            localization.GetString("PantryResults", language),
+            cancellationToken: cancellationToken);
+
+        foreach (var match in matches.Take(5))
+        {
+            await SendRecipeSummaryAsync(chatId, match.Recipe, language, cancellationToken);
+        }
+    }
+
+    private async Task SendNutritionByNameAsync(long chatId, long userId, string query, string language, CancellationToken cancellationToken)
+    {
+        var recipes = await repository.SearchByNameAsync(userId, query, cancellationToken);
+        var recipe = recipes.FirstOrDefault();
+
+        if (recipe is null)
+        {
+            await botClient.SendMessage(
+                chatId,
+                localization.GetString("NutritionNotFound", language),
+                cancellationToken: cancellationToken);
+            return;
+        }
+
+        await SendNutritionAsync(chatId, recipe, language, cancellationToken);
+    }
+
+    private async Task SendNutritionAsync(long chatId, Recipe recipe, string language, CancellationToken cancellationToken)
+    {
+        var estimate = recipe.Nutrition ?? await nutritionService.EstimateAsync(recipe, language, cancellationToken);
+
+        if (estimate is null)
+        {
+            await botClient.SendMessage(
+                chatId,
+                localization.GetString("NutritionUnavailable", language),
+                cancellationToken: cancellationToken);
+            return;
+        }
+
+        await botClient.SendMessage(
+            chatId,
+            localization.GetString(
+                "NutritionResult",
+                language,
+                estimate.Calories,
+                estimate.Protein,
+                estimate.Carbs,
+                estimate.Fat),
+            cancellationToken: cancellationToken);
+    }
+
+    private async Task SendCookingStepAsync(long chatId, Recipe recipe, int stepIndex, string language, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(recipe.Id))
+        {
+            await botClient.SendMessage(
+                chatId,
+                localization.GetString("CookingNoSteps", language),
+                cancellationToken: cancellationToken);
+            return;
+        }
+
+        var steps = recipe.Steps.OrderBy(step => step.Order).ToList();
+        if (steps.Count == 0)
+        {
+            await botClient.SendMessage(
+                chatId,
+                localization.GetString("CookingNoSteps", language),
+                cancellationToken: cancellationToken);
+            return;
+        }
+
+        var clampedIndex = Math.Clamp(stepIndex, 0, steps.Count - 1);
+        var step = steps[clampedIndex];
+        var text = localization.GetString("CookingStep", language, clampedIndex + 1, steps.Count, step.Instruction);
+
+        var buttons = new List<InlineKeyboardButton[]>();
+        var row = new List<InlineKeyboardButton>();
+
+        if (clampedIndex > 0)
+        {
+            row.Add(InlineKeyboardButton.WithCallbackData(
+                localization.GetString("ActionPrevStep", language),
+                $"cook:{recipe.Id}:{clampedIndex - 1}"));
+        }
+
+        row.Add(InlineKeyboardButton.WithCallbackData(
+            localization.GetString("ActionRepeatStep", language),
+            $"cook:{recipe.Id}:{clampedIndex}"));
+
+        if (clampedIndex < steps.Count - 1)
+        {
+            row.Add(InlineKeyboardButton.WithCallbackData(
+                localization.GetString("ActionNextStep", language),
+                $"cook:{recipe.Id}:{clampedIndex + 1}"));
+        }
+
+        buttons.Add(row.ToArray());
+
+        await botClient.SendMessage(
+            chatId,
+            text,
+            replyMarkup: new InlineKeyboardMarkup(buttons),
+            cancellationToken: cancellationToken);
+    }
+
+    private async Task SendRecipeSummaryAsync(long chatId, Recipe recipe, string language, CancellationToken cancellationToken)
+    {
+        var markup = BuildRecipeActions(recipe, language);
+        await botClient.SendMessage(
+            chatId,
+            RecipeFormatter.FormatSummary(recipe),
+            parseMode: ParseMode.MarkdownV2,
+            replyMarkup: markup,
+            cancellationToken: cancellationToken);
+    }
+
+    private InlineKeyboardMarkup? BuildRecipeActions(Recipe recipe, string language)
+    {
+        if (string.IsNullOrWhiteSpace(recipe.Id))
+        {
+            return null;
+        }
+
+        var favoriteLabel = recipe.IsFavorite
+            ? localization.GetString("ActionUnfavorite", language)
+            : localization.GetString("ActionFavorite", language);
+
+        var buttons = new[]
+        {
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData(
+                    localization.GetString("ActionStartCooking", language),
+                    $"cook:{recipe.Id}:0"),
+                InlineKeyboardButton.WithCallbackData(
+                    favoriteLabel,
+                    $"favorite:{recipe.Id}")
+            },
+            new[]
+            {
+                InlineKeyboardButton.WithCallbackData(
+                    localization.GetString("ActionNutrition", language),
+                    $"nutrition:{recipe.Id}")
+            }
+        };
+
+        return new InlineKeyboardMarkup(buttons);
+    }
+
+    private CommandParseResult ParseCommand(string text, string language)
+    {
+        var trimmed = text.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return new CommandParseResult(string.Empty, string.Empty);
+        }
+
+        var aliases = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            { "/start", "start" },
+            { "start", "start" },
+            { "/language", "language" },
+            { "language", "language" },
+            { "/categories", "categories" },
+            { "categories", "categories" },
+            { "/search", "search" },
+            { "search", "search" },
+            { "/ingredients", "ingredients" },
+            { "ingredients", "ingredients" },
+            { "/favorites", "favorites" },
+            { "favorites", "favorites" },
+            { "/pantry", "pantry" },
+            { "pantry", "pantry" },
+            { "/nutrition", "nutrition" },
+            { "nutrition", "nutrition" },
+            { "/info", "info" },
+            { "info", "info" }
+        };
+
+        var localizedAliases = new[]
+        {
+            ("MenuLanguage", "language"),
+            ("MenuCategories", "categories"),
+            ("MenuSearch", "search"),
+            ("MenuIngredients", "ingredients"),
+            ("MenuFavorites", "favorites"),
+            ("MenuPantry", "pantry"),
+            ("MenuNutrition", "nutrition"),
+            ("MenuInfo", "info")
+        };
+
+        foreach (var (key, command) in localizedAliases)
+        {
+            var label = localization.GetString(key, language);
+            if (!string.IsNullOrWhiteSpace(label))
+            {
+                aliases[label] = command;
+                aliases[$"/{label}"] = command;
+            }
+        }
+
+        foreach (var alias in aliases.Keys)
+        {
+            if (trimmed.Equals(alias, StringComparison.OrdinalIgnoreCase))
+            {
+                return new CommandParseResult(aliases[alias], string.Empty);
+            }
+
+            if (trimmed.StartsWith(alias + " ", StringComparison.OrdinalIgnoreCase))
+            {
+                var argument = trimmed[alias.Length..].Trim();
+                return new CommandParseResult(aliases[alias], argument);
+            }
+        }
+
+        return new CommandParseResult(string.Empty, string.Empty);
+    }
+
+    private sealed record CommandParseResult(string Name, string Argument);
+
     private async Task SendSearchResultsAsync(long chatId, long userId, string query, string language, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(query))
@@ -267,11 +751,35 @@ public sealed class TelegramBotService(
 
         foreach (var recipe in recipes)
         {
+            await SendRecipeSummaryAsync(chatId, recipe, language, cancellationToken);
+        }
+    }
+
+    private async Task SendIngredientSearchResultsAsync(long chatId, long userId, string query, string language, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
             await botClient.SendMessage(
                 chatId,
-                RecipeFormatter.FormatSummary(recipe),
-                parseMode: ParseMode.MarkdownV2,
+                localization.GetString("IngredientSearchMissing", language),
                 cancellationToken: cancellationToken);
+            return;
+        }
+
+        var recipes = await repository.SearchByIngredientAsync(userId, query, cancellationToken);
+
+        if (recipes.Count == 0)
+        {
+            await botClient.SendMessage(
+                chatId,
+                localization.GetString("IngredientSearchNone", language),
+                cancellationToken: cancellationToken);
+            return;
+        }
+
+        foreach (var recipe in recipes)
+        {
+            await SendRecipeSummaryAsync(chatId, recipe, language, cancellationToken);
         }
     }
 
