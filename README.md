@@ -59,6 +59,22 @@ dotnet run
 - `/categories` - Browse saved recipes by category.
 - `/search <name>` - Search recipes by title.
 
+## Project Structure
+
+```
+src/CookFinder.Bot
+├── Configurations
+├── Models
+├── Repositories
+├── Resources
+└── Services
+    ├── Bot
+    ├── Localization
+    ├── Metadata
+    ├── Parsing
+    └── Recipes
+```
+
 ## How the LLM parsing works
 
 - The bot fetches metadata for the video (title/description/author) via `IVideoMetadataClient`.
