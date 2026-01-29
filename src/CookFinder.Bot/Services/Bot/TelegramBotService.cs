@@ -1,7 +1,7 @@
 using CookFinder.Bot.Models;
 using CookFinder.Bot.Repositories;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using CookFinder.Bot.Services.Localization;
+using CookFinder.Bot.Services.Recipes;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -9,7 +9,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
-namespace CookFinder.Bot.Services;
+namespace CookFinder.Bot.Services.Bot;
 
 public sealed class TelegramBotService(
     ITelegramBotClient botClient,

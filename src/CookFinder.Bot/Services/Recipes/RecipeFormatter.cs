@@ -1,7 +1,7 @@
 using System.Text;
 using CookFinder.Bot.Models;
 
-namespace CookFinder.Bot.Services;
+namespace CookFinder.Bot.Services.Recipes;
 
 public static class RecipeFormatter
 {

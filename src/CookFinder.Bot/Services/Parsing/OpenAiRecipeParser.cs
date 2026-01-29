@@ -3,9 +3,10 @@ using System.Text;
 using System.Text.Json;
 using CookFinder.Bot.Configurations;
 using CookFinder.Bot.Models;
+using CookFinder.Bot.Services.Metadata;
 using Microsoft.Extensions.Options;
 
-namespace CookFinder.Bot.Services;
+namespace CookFinder.Bot.Services.Parsing;
 
 public sealed class OpenAiRecipeParser(HttpClient httpClient, IOptions<OpenAiOptions> options) : IRecipeParser
 {

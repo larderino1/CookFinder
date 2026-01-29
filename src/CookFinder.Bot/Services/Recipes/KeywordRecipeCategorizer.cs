@@ -1,7 +1,7 @@
 using CookFinder.Bot.Configurations;
 using Microsoft.Extensions.Options;
 
-namespace CookFinder.Bot.Services;
+namespace CookFinder.Bot.Services.Recipes;
 
 public sealed class KeywordRecipeCategorizer(IOptions<RecipeOptions> options) : IRecipeCategorizer
 {

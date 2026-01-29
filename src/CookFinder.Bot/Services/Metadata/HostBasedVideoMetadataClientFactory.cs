@@ -1,4 +1,4 @@
-namespace CookFinder.Bot.Services;
+namespace CookFinder.Bot.Services.Metadata;
 
 public sealed class HostBasedVideoMetadataClientFactory(
     YouTubeMetadataClient youTubeClient,

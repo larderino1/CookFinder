@@ -1,7 +1,7 @@
-using CookFinder.Bot.Models;
-using Microsoft.Extensions.Logging;
+using CookFinder.Bot.Services.Metadata;
+using CookFinder.Bot.Services.Parsing;
 
-namespace CookFinder.Bot.Services;
+namespace CookFinder.Bot.Services.Recipes;
 
 public sealed class RecipeExtractionPipeline(
     IVideoMetadataClientFactory metadataClientFactory,

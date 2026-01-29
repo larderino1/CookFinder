@@ -1,7 +1,7 @@
 using CookFinder.Bot.Models;
-using Microsoft.Extensions.Logging;
+using CookFinder.Bot.Services.Metadata;
 
-namespace CookFinder.Bot.Services;
+namespace CookFinder.Bot.Services.Parsing;
 
 public sealed class RuleBasedRecipeParser(ILogger<RuleBasedRecipeParser> logger) : IRecipeParser
 {

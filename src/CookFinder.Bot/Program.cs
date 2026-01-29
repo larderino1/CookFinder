@@ -1,6 +1,11 @@
 using CookFinder.Bot.Configurations;
 using CookFinder.Bot.Repositories;
 using CookFinder.Bot.Services;
+using CookFinder.Bot.Services.Bot;
+using CookFinder.Bot.Services.Localization;
+using CookFinder.Bot.Services.Metadata;
+using CookFinder.Bot.Services.Parsing;
+using CookFinder.Bot.Services.Recipes;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -34,8 +39,8 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddSingleton<IUserPreferenceRepository, MongoUserPreferenceRepository>();
         services.AddSingleton<ILocalizationService, ResourceLocalizationService>();
 
-        services.AddSingleton<TikTokMetadataClient>();
-        services.AddSingleton<StubVideoMetadataClient>();
+        services.AddScoped<TikTokMetadataClient>();
+        services.AddScoped<StubVideoMetadataClient>();
         services.AddSingleton<IVideoMetadataClientFactory, HostBasedVideoMetadataClientFactory>();
 
         services.AddSingleton<IRecipeParser, OpenAiRecipeParser>();
