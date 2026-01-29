@@ -53,9 +53,15 @@ Use the steps below to create the required credentials for each service and then
 2. If you do not see **Instagram Graph API** in the use-case list, pick **Manage messaging & content on Instagram**
    or **Embed Facebook, Instagram and Threads content in other websites** to create the app.
 3. After the app is created, open the app dashboard and click **Add product**, then add **Instagram Graph API**.
-4. Create or connect a Facebook Page and an Instagram Business/Creator account.
-5. Use the Graph API Explorer (or your own auth flow) to generate a long-lived access token.
-6. Paste it into `VideoSources:InstagramAccessToken` in `appsettings.json`.
+4. Open **App roles** and add your Facebook account as a **Developer** (or **Admin**) on the app.
+   If you see “Insufficient Developer Role,” this is the fix.
+5. Create or connect a Facebook Page and an Instagram Business/Creator account.
+6. In **App Review → Permissions and Features**, request and enable:
+   - `instagram_basic`
+   - `pages_show_list`
+   - `instagram_manage_insights` (optional, needed for analytics)
+7. Use the Graph API Explorer (or your own auth flow) to generate a long-lived access token.
+8. Paste it into `VideoSources:InstagramAccessToken` in `appsettings.json`.
 
 #### TikTok API Key (if available)
 
