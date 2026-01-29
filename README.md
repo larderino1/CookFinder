@@ -20,33 +20,6 @@ CookFinder is a Telegram bot MVP that helps users save short-form video recipes,
 - Telegram bot token from [BotFather](https://t.me/botfather).
 - OpenAI API key (for LLM parsing).
 
-### Set up MongoDB locally
-
-#### Option A: Local MongoDB Community Server
-
-1. Download MongoDB Community Server from https://www.mongodb.com/try/download/community.
-2. Install and follow the default setup for your OS.
-3. Start the MongoDB service (`mongod`).
-4. Confirm it is running:
-   ```bash
-   mongosh --eval "db.runCommand({ ping: 1 })"
-   ```
-5. Keep the default connection string in `appsettings.json`:
-   ```json
-   "Mongo": {
-     "ConnectionString": "mongodb://localhost:27017",
-     "Database": "cookfinder"
-   }
-   ```
-
-#### Option B: MongoDB via Docker
-
-```bash
-docker run --name cookfinder-mongo -d -p 27017:27017 mongo:7
-```
-
-Then keep the same `mongodb://localhost:27017` connection string.
-
 ### Configuration
 
 Update `src/CookFinder.Bot/appsettings.json`:
