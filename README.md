@@ -20,6 +20,78 @@ CookFinder is a Telegram bot MVP that helps users save short-form video recipes,
 - Telegram bot token from [BotFather](https://t.me/botfather).
 - OpenAI API key (for LLM parsing).
 
+### Register for API keys
+
+Use the steps below to create the required credentials for each service and then copy them into
+`src/CookFinder.Bot/appsettings.json`.
+
+#### Telegram Bot Token
+
+1. Open [@BotFather](https://t.me/botfather) in Telegram.
+2. Run `/newbot`, follow the prompts, and choose a name + username.
+3. Copy the bot token that BotFather returns.
+4. Paste it into `Telegram:Token` in `appsettings.json`.
+
+#### OpenAI API Key
+
+1. Sign in to [OpenAI](https://platform.openai.com/).
+2. Open **Settings → API keys** (or go to https://platform.openai.com/api-keys).
+3. Create a new secret key and copy it.
+4. Paste it into `OpenAI:ApiKey` in `appsettings.json`.
+
+#### YouTube Data API v3 Key
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create or select a project.
+3. Enable **YouTube Data API v3** for the project.
+4. Open **APIs & Services → Credentials**, create an **API key**, and copy it.
+5. Paste it into `VideoSources:YouTubeApiKey` in `appsettings.json`.
+
+#### Instagram Graph API Access Token
+
+1. Go to the [Meta for Developers](https://developers.facebook.com/) portal and create an app.
+2. Add the **Instagram Graph API** product.
+3. Create or connect a Facebook Page and an Instagram Business/Creator account.
+4. Use the Graph API Explorer (or your own auth flow) to generate a long-lived access token.
+5. Paste it into `VideoSources:InstagramAccessToken` in `appsettings.json`.
+
+#### TikTok API Key (if available)
+
+1. Sign up at [TikTok for Developers](https://developers.tiktok.com/).
+2. Create an app and follow the verification/approval flow.
+3. Once approved, generate credentials (API key or access token, depending on the product).
+4. Paste the key into `VideoSources:TikTokApiKey` in `appsettings.json`.
+
+> Note: TikTok’s official APIs are limited and may require approval. For the MVP, you can leave the
+> TikTok key empty while using the stub metadata client.
+
+### Set up MongoDB locally
+
+#### Option A: Local MongoDB Community Server
+
+1. Download MongoDB Community Server from https://www.mongodb.com/try/download/community.
+2. Install and follow the default setup for your OS.
+3. Start the MongoDB service (`mongod`).
+4. Confirm it is running:
+   ```bash
+   mongosh --eval "db.runCommand({ ping: 1 })"
+   ```
+5. Keep the default connection string in `appsettings.json`:
+   ```json
+   "Mongo": {
+     "ConnectionString": "mongodb://localhost:27017",
+     "Database": "cookfinder"
+   }
+   ```
+
+#### Option B: MongoDB via Docker
+
+```bash
+docker run --name cookfinder-mongo -d -p 27017:27017 mongo:7
+```
+
+Then keep the same `mongodb://localhost:27017` connection string.
+
 ### Configuration
 
 Update `src/CookFinder.Bot/appsettings.json`:
