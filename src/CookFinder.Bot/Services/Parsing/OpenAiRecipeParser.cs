@@ -57,7 +57,8 @@ public sealed class OpenAiRecipeParser(HttpClient httpClient, IOptions<OpenAiOpt
             throw new InvalidOperationException("OpenAI response was empty.");
         }
 
-        var parsed = JsonSerializer.Deserialize<RecipeJson>(content, JsonOptions)
+        var jsonContent = ExtractJson(content);
+        var parsed = JsonSerializer.Deserialize<RecipeJson>(jsonContent, JsonOptions)
             ?? throw new InvalidOperationException("OpenAI response JSON did not match schema.");
 
         return new ParsedRecipe(
@@ -84,4 +85,24 @@ public sealed class OpenAiRecipeParser(HttpClient httpClient, IOptions<OpenAiOpt
     private sealed record IngredientJson(string? Name, string? Quantity);
 
     private sealed record StepJson(int Order, string? Instruction);
+
+    private static string ExtractJson(string content)
+    {
+        var trimmed = content.Trim();
+        if (trimmed.StartsWith("```", StringComparison.Ordinal))
+        {
+            var firstNewline = trimmed.IndexOf('\n');
+            if (firstNewline >= 0)
+            {
+                trimmed = trimmed[(firstNewline + 1)..];
+            }
+
+            if (trimmed.EndsWith("```", StringComparison.Ordinal))
+            {
+                trimmed = trimmed[..^3];
+            }
+        }
+
+        return trimmed.Trim();
+    }
 }
