@@ -30,6 +30,33 @@
   <data name="RecipeSaved" xml:space="preserve">
     <value>Recipe saved! Use /categories to browse or /search &lt;name&gt; to find recipes.</value>
   </data>
+  <data name="MainMenu" xml:space="preserve">
+    <value>Menu</value>
+  </data>
+  <data name="MenuCategories" xml:space="preserve">
+    <value>Categories</value>
+  </data>
+  <data name="MenuSearch" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="MenuIngredients" xml:space="preserve">
+    <value>Ingredients</value>
+  </data>
+  <data name="MenuFavorites" xml:space="preserve">
+    <value>Favorites</value>
+  </data>
+  <data name="MenuPantry" xml:space="preserve">
+    <value>Pantry</value>
+  </data>
+  <data name="MenuNutrition" xml:space="preserve">
+    <value>Nutrition</value>
+  </data>
+  <data name="MenuLanguage" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="MenuInfo" xml:space="preserve">
+    <value>Info</value>
+  </data>
   <data name="CategoriesEmpty" xml:space="preserve">
     <value>No recipes yet. Send a video link to save one.</value>
   </data>
@@ -39,11 +66,86 @@
   <data name="SearchHelp" xml:space="preserve">
     <value>Send /search &lt;name&gt; to find recipes by title.</value>
   </data>
+  <data name="IngredientSearchHelp" xml:space="preserve">
+    <value>Send /ingredients &lt;name&gt; to find recipes by ingredient.</value>
+  </data>
   <data name="SearchMissing" xml:space="preserve">
     <value>Please provide a search term after /search.</value>
   </data>
+  <data name="IngredientSearchMissing" xml:space="preserve">
+    <value>Please provide an ingredient after /ingredients.</value>
+  </data>
   <data name="SearchNone" xml:space="preserve">
     <value>No recipes matched that query.</value>
+  </data>
+  <data name="IngredientSearchNone" xml:space="preserve">
+    <value>No recipes matched that ingredient.</value>
+  </data>
+  <data name="FavoritesEmpty" xml:space="preserve">
+    <value>No favorites yet. Use the ☆ button on a recipe to save one.</value>
+  </data>
+  <data name="FavoritesTitle" xml:space="preserve">
+    <value>Your favorites:</value>
+  </data>
+  <data name="PantryHelp" xml:space="preserve">
+    <value>Send /pantry &lt;ingredients&gt; to match recipes you can cook.</value>
+  </data>
+  <data name="PantryMissing" xml:space="preserve">
+    <value>Please provide ingredients after /pantry.</value>
+  </data>
+  <data name="PantryNone" xml:space="preserve">
+    <value>No recipes matched those ingredients.</value>
+  </data>
+  <data name="PantryResults" xml:space="preserve">
+    <value>Top matches:</value>
+  </data>
+  <data name="NutritionHelp" xml:space="preserve">
+    <value>Send /nutrition &lt;recipe name&gt; to estimate nutrition.</value>
+  </data>
+  <data name="NutritionNotFound" xml:space="preserve">
+    <value>No recipe matched that name.</value>
+  </data>
+  <data name="NutritionUnavailable" xml:space="preserve">
+    <value>Nutrition estimation is unavailable right now.</value>
+  </data>
+  <data name="NutritionResult" xml:space="preserve">
+    <value>Estimated nutrition per serving:\nCalories: {0} kcal\nProtein: {1} g\nCarbs: {2} g\nFat: {3} g</value>
+  </data>
+  <data name="ActionStartCooking" xml:space="preserve">
+    <value>Start cooking</value>
+  </data>
+  <data name="ActionNextStep" xml:space="preserve">
+    <value>Next</value>
+  </data>
+  <data name="ActionPrevStep" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="ActionRepeatStep" xml:space="preserve">
+    <value>Repeat</value>
+  </data>
+  <data name="ActionFavorite" xml:space="preserve">
+    <value>☆ Favorite</value>
+  </data>
+  <data name="ActionUnfavorite" xml:space="preserve">
+    <value>★ Favorite</value>
+  </data>
+  <data name="ActionNutrition" xml:space="preserve">
+    <value>Nutrition</value>
+  </data>
+  <data name="CookingStep" xml:space="preserve">
+    <value>Step {0} of {1}:\n{2}</value>
+  </data>
+  <data name="CookingNoSteps" xml:space="preserve">
+    <value>No steps were found for this recipe.</value>
+  </data>
+  <data name="FavoriteAdded" xml:space="preserve">
+    <value>Added to favorites.</value>
+  </data>
+  <data name="FavoriteRemoved" xml:space="preserve">
+    <value>Removed from favorites.</value>
+  </data>
+  <data name="InfoMessage" xml:space="preserve">
+    <value>Send a short video link to save a recipe. Browse by categories, search by name or ingredient, mark favorites, match recipes with /pantry ingredients, get nutrition, and cook step-by-step with buttons.</value>
   </data>
   <data name="NoRecipesInCategory" xml:space="preserve">
     <value>No recipes in {0} yet.</value>

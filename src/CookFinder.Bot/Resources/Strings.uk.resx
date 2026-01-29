@@ -28,7 +28,34 @@
     <value>Добре! Формую рецепт...</value>
   </data>
   <data name="RecipeSaved" xml:space="preserve">
-    <value>Рецепт збережено! Використовуйте /categories для перегляду або /search &lt;назва&gt; для пошуку.</value>
+    <value>Рецепт збережено! Використовуйте /категорії для перегляду або /пошук &lt;назва&gt; для пошуку.</value>
+  </data>
+  <data name="MainMenu" xml:space="preserve">
+    <value>Меню</value>
+  </data>
+  <data name="MenuCategories" xml:space="preserve">
+    <value>Категорії</value>
+  </data>
+  <data name="MenuSearch" xml:space="preserve">
+    <value>Пошук</value>
+  </data>
+  <data name="MenuIngredients" xml:space="preserve">
+    <value>Інгредієнти</value>
+  </data>
+  <data name="MenuFavorites" xml:space="preserve">
+    <value>Улюблені</value>
+  </data>
+  <data name="MenuPantry" xml:space="preserve">
+    <value>Комора</value>
+  </data>
+  <data name="MenuNutrition" xml:space="preserve">
+    <value>Харчування</value>
+  </data>
+  <data name="MenuLanguage" xml:space="preserve">
+    <value>Мова</value>
+  </data>
+  <data name="MenuInfo" xml:space="preserve">
+    <value>Інфо</value>
   </data>
   <data name="CategoriesEmpty" xml:space="preserve">
     <value>Поки що немає рецептів. Надішліть посилання на відео, щоб зберегти рецепт.</value>
@@ -37,13 +64,88 @@
     <value>Оберіть категорію:</value>
   </data>
   <data name="SearchHelp" xml:space="preserve">
-    <value>Надішліть /search &lt;назва&gt;, щоб знайти рецепт за назвою.</value>
+    <value>Надішліть /пошук &lt;назва&gt;, щоб знайти рецепт за назвою.</value>
+  </data>
+  <data name="IngredientSearchHelp" xml:space="preserve">
+    <value>Надішліть /інгредієнти &lt;інгредієнт&gt;, щоб знайти рецепт за інгредієнтом.</value>
   </data>
   <data name="SearchMissing" xml:space="preserve">
-    <value>Будь ласка, додайте пошуковий запит після /search.</value>
+    <value>Будь ласка, додайте пошуковий запит після /пошук.</value>
+  </data>
+  <data name="IngredientSearchMissing" xml:space="preserve">
+    <value>Будь ласка, додайте інгредієнт після /інгредієнти.</value>
   </data>
   <data name="SearchNone" xml:space="preserve">
     <value>Рецептів за цим запитом не знайдено.</value>
+  </data>
+  <data name="IngredientSearchNone" xml:space="preserve">
+    <value>Рецептів з таким інгредієнтом не знайдено.</value>
+  </data>
+  <data name="FavoritesEmpty" xml:space="preserve">
+    <value>Поки що немає улюблених. Натисніть ☆ у рецепті, щоб зберегти.</value>
+  </data>
+  <data name="FavoritesTitle" xml:space="preserve">
+    <value>Ваші улюблені:</value>
+  </data>
+  <data name="PantryHelp" xml:space="preserve">
+    <value>Надішліть /комора &lt;інгредієнти&gt;, щоб підібрати рецепти.</value>
+  </data>
+  <data name="PantryMissing" xml:space="preserve">
+    <value>Будь ласка, додайте інгредієнти після /комора.</value>
+  </data>
+  <data name="PantryNone" xml:space="preserve">
+    <value>Рецептів з такими інгредієнтами не знайдено.</value>
+  </data>
+  <data name="PantryResults" xml:space="preserve">
+    <value>Найкращі збіги:</value>
+  </data>
+  <data name="NutritionHelp" xml:space="preserve">
+    <value>Надішліть /харчування &lt;назва рецепту&gt;, щоб оцінити харчування.</value>
+  </data>
+  <data name="NutritionNotFound" xml:space="preserve">
+    <value>Рецепт із такою назвою не знайдено.</value>
+  </data>
+  <data name="NutritionUnavailable" xml:space="preserve">
+    <value>Оцінка харчування зараз недоступна.</value>
+  </data>
+  <data name="NutritionResult" xml:space="preserve">
+    <value>Оцінка харчування на порцію:\nКалорії: {0} ккал\nБілки: {1} г\nВуглеводи: {2} г\nЖири: {3} г</value>
+  </data>
+  <data name="ActionStartCooking" xml:space="preserve">
+    <value>Почати готувати</value>
+  </data>
+  <data name="ActionNextStep" xml:space="preserve">
+    <value>Далі</value>
+  </data>
+  <data name="ActionPrevStep" xml:space="preserve">
+    <value>Назад</value>
+  </data>
+  <data name="ActionRepeatStep" xml:space="preserve">
+    <value>Повторити</value>
+  </data>
+  <data name="ActionFavorite" xml:space="preserve">
+    <value>☆ Улюблене</value>
+  </data>
+  <data name="ActionUnfavorite" xml:space="preserve">
+    <value>★ Улюблене</value>
+  </data>
+  <data name="ActionNutrition" xml:space="preserve">
+    <value>Харчування</value>
+  </data>
+  <data name="CookingStep" xml:space="preserve">
+    <value>Крок {0} з {1}:\n{2}</value>
+  </data>
+  <data name="CookingNoSteps" xml:space="preserve">
+    <value>У цьому рецепті немає кроків.</value>
+  </data>
+  <data name="FavoriteAdded" xml:space="preserve">
+    <value>Додано до улюблених.</value>
+  </data>
+  <data name="FavoriteRemoved" xml:space="preserve">
+    <value>Видалено з улюблених.</value>
+  </data>
+  <data name="InfoMessage" xml:space="preserve">
+    <value>Надішліть посилання на коротке відео, щоб зберегти рецепт. Переглядайте категорії, шукайте за назвою або інгредієнтом, додавайте в улюблені, підбирайте рецепти через /комора, дивіться харчування й готуйте крок за кроком з кнопками.</value>
   </data>
   <data name="NoRecipesInCategory" xml:space="preserve">
     <value>У категорії {0} поки немає рецептів.</value>
