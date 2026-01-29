@@ -326,6 +326,18 @@ public sealed class TelegramBotService(
             return;
         }
 
+        if (query.Data.StartsWith("cook-finish:", StringComparison.OrdinalIgnoreCase))
+        {
+            var language = await userPreferences.GetLanguageAsync(query.From.Id, cancellationToken);
+            await botClient.SendMessage(
+                query.Message.Chat.Id,
+                localization.GetString("CookingFinished", language),
+                cancellationToken: cancellationToken);
+            await SendMainMenuAsync(query.Message.Chat.Id, language, cancellationToken);
+            await botClient.AnswerCallbackQuery(query.Id, cancellationToken: cancellationToken);
+            return;
+        }
+
         if (query.Data.StartsWith("cook:", StringComparison.OrdinalIgnoreCase))
         {
             var language = await userPreferences.GetLanguageAsync(query.From.Id, cancellationToken);
@@ -581,7 +593,8 @@ public sealed class TelegramBotService(
 
         var clampedIndex = Math.Clamp(stepIndex, 0, steps.Count - 1);
         var step = steps[clampedIndex];
-        var text = localization.GetString("CookingStep", language, clampedIndex + 1, steps.Count, step.Instruction);
+        var instruction = step.Instruction?.Trim() ?? string.Empty;
+        var text = localization.GetString("CookingStep", language, clampedIndex + 1, steps.Count, instruction);
 
         var buttons = new List<InlineKeyboardButton[]>();
         var row = new List<InlineKeyboardButton>();
@@ -605,6 +618,16 @@ public sealed class TelegramBotService(
         }
 
         buttons.Add(row.ToArray());
+
+        if (clampedIndex == steps.Count - 1)
+        {
+            buttons.Add(new[]
+            {
+                InlineKeyboardButton.WithCallbackData(
+                    localization.GetString("ActionFinishCooking", language),
+                    $"cook-finish:{recipe.Id}")
+            });
+        }
 
         await botClient.SendMessage(
             chatId,

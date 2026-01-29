@@ -67,29 +67,48 @@ public sealed class OpenAiRecipeNutritionService(
         }
 
         var jsonContent = ExtractJson(content);
-        var parsed = JsonSerializer.Deserialize<NutritionResponse>(jsonContent, JsonOptions);
+        decimal calories;
+        decimal protein;
+        decimal carbs;
+        decimal fat;
 
-        if (parsed is null)
+        try
         {
-            logger.LogWarning("OpenAI nutrition response could not be parsed.");
-            return null;
+            using var document = JsonDocument.Parse(jsonContent);
+            var root = document.RootElement;
+
+            if (!TryReadDecimal(root, "calories", out calories) ||
+                !TryReadDecimal(root, "protein", out protein) ||
+                !TryReadDecimal(root, "carbs", out carbs) ||
+                !TryReadDecimal(root, "fat", out fat))
+            {
+                logger.LogWarning("OpenAI nutrition response contained invalid values.");
+                return null;
+            }
         }
-
-        if (!TryParseDecimal(parsed.Calories, out var calories) ||
-            !TryParseDecimal(parsed.Protein, out var protein) ||
-            !TryParseDecimal(parsed.Carbs, out var carbs) ||
-            !TryParseDecimal(parsed.Fat, out var fat))
+        catch (JsonException ex)
         {
-            logger.LogWarning("OpenAI nutrition response contained invalid values.");
+            logger.LogWarning(ex, "OpenAI nutrition response could not be parsed.");
             return null;
         }
 
         return new NutritionInfo(calories, protein, carbs, fat);
     }
 
-    private static bool TryParseDecimal(string? value, out decimal result)
+    private static bool TryReadDecimal(JsonElement root, string propertyName, out decimal result)
     {
-        return decimal.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out result);
+        result = 0;
+        if (!root.TryGetProperty(propertyName, out var value))
+        {
+            return false;
+        }
+
+        return value.ValueKind switch
+        {
+            JsonValueKind.Number => value.TryGetDecimal(out result),
+            JsonValueKind.String => decimal.TryParse(value.GetString(), NumberStyles.Number, CultureInfo.InvariantCulture, out result),
+            _ => false
+        };
     }
 
     private sealed record ChatCompletionResponse(IReadOnlyList<ChatChoice> Choices);
@@ -97,8 +116,6 @@ public sealed class OpenAiRecipeNutritionService(
     private sealed record ChatChoice(ChatMessage Message);
 
     private sealed record ChatMessage(string Content);
-
-    private sealed record NutritionResponse(string? Calories, string? Protein, string? Carbs, string? Fat);
 
     private static string ExtractJson(string content)
     {

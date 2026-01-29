@@ -49,6 +49,16 @@ public sealed class YouTubeMetadataClient(HttpClient httpClient, IOptions<VideoS
             return sourceUrl.AbsolutePath.Trim('/');
         }
 
+        if (sourceUrl.AbsolutePath.StartsWith("/shorts/", StringComparison.OrdinalIgnoreCase))
+        {
+            return sourceUrl.AbsolutePath["/shorts/".Length..].Trim('/');
+        }
+
+        if (sourceUrl.AbsolutePath.StartsWith("/embed/", StringComparison.OrdinalIgnoreCase))
+        {
+            return sourceUrl.AbsolutePath["/embed/".Length..].Trim('/');
+        }
+
         var query = sourceUrl.Query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries);
         foreach (var part in query)
         {
