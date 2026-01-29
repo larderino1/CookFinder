@@ -34,12 +34,12 @@ var host = Host.CreateDefaultBuilder(args)
         services.AddHttpClient<OpenAiRecipeParser>();
         services.AddHttpClient<YouTubeMetadataClient>();
         services.AddHttpClient<InstagramMetadataClient>();
+        services.AddHttpClient<TikTokMetadataClient>();
 
         services.AddSingleton<IRecipeRepository, MongoRecipeRepository>();
         services.AddSingleton<IUserPreferenceRepository, MongoUserPreferenceRepository>();
         services.AddSingleton<ILocalizationService, ResourceLocalizationService>();
 
-        services.AddScoped<TikTokMetadataClient>();
         services.AddScoped<StubVideoMetadataClient>();
         services.AddSingleton<IVideoMetadataClientFactory, HostBasedVideoMetadataClientFactory>();
 
