@@ -22,13 +22,14 @@ public sealed class OpenAiRecipeParser(HttpClient httpClient, IOptions<OpenAiOpt
         using var request = new HttpRequestMessage(HttpMethod.Post, options.Value.Endpoint);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", options.Value.ApiKey);
 
-        var prompt = $"""
-You are a recipe assistant. Turn the video metadata into a concise recipe with ingredients and numbered steps.
-Title: {metadata.Title}
-Description: {metadata.Description}
-Author: {metadata.Author}
-Return JSON with fields: title, description, ingredients (array of {{name, quantity}}), steps (array of {{order, instruction}}).
-""";
+        var prompt = string.Join(Environment.NewLine, new[]
+        {
+            "You are a recipe assistant. Turn the video metadata into a concise recipe with ingredients and numbered steps.",
+            $"Title: {metadata.Title}",
+            $"Description: {metadata.Description}",
+            $"Author: {metadata.Author}",
+            "Return JSON with fields: title, description, ingredients (array of {name, quantity}), steps (array of {order, instruction})."
+        });
 
         var payload = new
         {
