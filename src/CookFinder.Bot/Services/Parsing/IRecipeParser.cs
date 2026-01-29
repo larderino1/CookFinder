@@ -11,5 +11,5 @@ public interface IRecipeParser
 public sealed record ParsedRecipe(
     string Title,
     string Description,
-    IReadOnlyList<Ingredient> Ingredients,
-    IReadOnlyList<RecipeStep> Steps);
+    IReadOnlyList<Ingredient>? Ingredients,
+    IReadOnlyList<RecipeStep>? Steps);
