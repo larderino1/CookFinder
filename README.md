@@ -84,6 +84,9 @@ The MVP currently uses stub clients. Replace them with platform-specific API cal
 
 ## Next Steps
 
-- Replace the stub platform clients with YouTube/Instagram/TikTok API clients.
-- Add a summarization/translation service for structured recipes.
-- Add inline navigation for paging.
+### TODO
+
+- [ ] Replace the stub platform clients with YouTube/Instagram/TikTok API clients.
+- [ ] Add a summarization/translation service for structured recipes.
+- [ ] Add inline navigation for paging.
+- [ ] Add pricing/quota notes for Google/Meta APIs.
