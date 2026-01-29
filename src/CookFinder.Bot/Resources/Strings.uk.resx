@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ChooseLanguage" xml:space="preserve">
+    <value>Оберіть мову:</value>
+  </data>
+  <data name="LanguageSet" xml:space="preserve">
+    <value>Мову збережено. Надішліть посилання на TikTok/YouTube Shorts/Instagram Reels, і я сформую рецепт.</value>
+  </data>
+  <data name="SendLinkPrompt" xml:space="preserve">
+    <value>Надішліть посилання на TikTok/YouTube Shorts/Instagram Reels, і я сформую рецепт.</value>
+  </data>
+  <data name="InvalidLink" xml:space="preserve">
+    <value>Будь ласка, надішліть посилання на TikTok, YouTube Shorts або Instagram Reels.</value>
+  </data>
+  <data name="Drafting" xml:space="preserve">
+    <value>Добре! Формую рецепт...</value>
+  </data>
+  <data name="RecipeSaved" xml:space="preserve">
+    <value>Рецепт збережено! Використовуйте /categories для перегляду або /search &lt;назва&gt; для пошуку.</value>
+  </data>
+  <data name="CategoriesEmpty" xml:space="preserve">
+    <value>Поки що немає рецептів. Надішліть посилання на відео, щоб зберегти рецепт.</value>
+  </data>
+  <data name="ChooseCategory" xml:space="preserve">
+    <value>Оберіть категорію:</value>
+  </data>
+  <data name="SearchHelp" xml:space="preserve">
+    <value>Надішліть /search &lt;назва&gt;, щоб знайти рецепт за назвою.</value>
+  </data>
+  <data name="SearchMissing" xml:space="preserve">
+    <value>Будь ласка, додайте пошуковий запит після /search.</value>
+  </data>
+  <data name="SearchNone" xml:space="preserve">
+    <value>Рецептів за цим запитом не знайдено.</value>
+  </data>
+  <data name="NoRecipesInCategory" xml:space="preserve">
+    <value>У категорії {0} поки немає рецептів.</value>
+  </data>
+</root>
