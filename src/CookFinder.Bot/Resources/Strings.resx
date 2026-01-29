@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=10.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ChooseLanguage" xml:space="preserve">
+    <value>Choose your language:</value>
+  </data>
+  <data name="LanguageSet" xml:space="preserve">
+    <value>Language saved. Send a TikTok/YouTube Shorts/Instagram Reels link and I will draft a recipe.</value>
+  </data>
+  <data name="SendLinkPrompt" xml:space="preserve">
+    <value>Send a TikTok/YouTube Shorts/Instagram Reels link and I will draft a recipe for you.</value>
+  </data>
+  <data name="InvalidLink" xml:space="preserve">
+    <value>Please send a TikTok, YouTube Shorts, or Instagram Reels link.</value>
+  </data>
+  <data name="Drafting" xml:space="preserve">
+    <value>Got it! Drafting your recipe...</value>
+  </data>
+  <data name="RecipeSaved" xml:space="preserve">
+    <value>Recipe saved! Use /categories to browse or /search &lt;name&gt; to find recipes.</value>
+  </data>
+  <data name="CategoriesEmpty" xml:space="preserve">
+    <value>No recipes yet. Send a video link to save one.</value>
+  </data>
+  <data name="ChooseCategory" xml:space="preserve">
+    <value>Choose a category:</value>
+  </data>
+  <data name="SearchHelp" xml:space="preserve">
+    <value>Send /search &lt;name&gt; to find recipes by title.</value>
+  </data>
+  <data name="SearchMissing" xml:space="preserve">
+    <value>Please provide a search term after /search.</value>
+  </data>
+  <data name="SearchNone" xml:space="preserve">
+    <value>No recipes matched that query.</value>
+  </data>
+  <data name="NoRecipesInCategory" xml:space="preserve">
+    <value>No recipes in {0} yet.</value>
+  </data>
+</root>
