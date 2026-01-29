@@ -64,28 +64,10 @@ public sealed class OpenAiRecipeParser(HttpClient httpClient, IOptions<OpenAiOpt
         return new ParsedRecipe(
             parsed.Title ?? metadata.Title,
             parsed.Description ?? metadata.Description,
-            parsed.Ingredients?.Select(item => new Ingredient { Name = item.Name ?? "", Quantity = item.Quantity }).ToList()
-                ?? Array.Empty<Ingredient>(),
-            parsed.Steps?.Select(step => new RecipeStep { Order = step.Order, Instruction = step.Instruction ?? "" }).ToList()
-                ?? Array.Empty<RecipeStep>());
+            parsed.Ingredients?.Select(item => new Ingredient { Name = item.Name ?? "", Quantity = item.Quantity }).ToList(),
+            parsed.Steps?.Select(step => new RecipeStep { Order = step.Order, Instruction = step.Instruction ?? "" }).ToList());
     }
-
-    private sealed record ChatCompletionResponse(IReadOnlyList<ChatChoice> Choices);
-
-    private sealed record ChatChoice(ChatMessage Message);
-
-    private sealed record ChatMessage(string Content);
-
-    private sealed record RecipeJson(
-        string? Title,
-        string? Description,
-        IReadOnlyList<IngredientJson>? Ingredients,
-        IReadOnlyList<StepJson>? Steps);
-
-    private sealed record IngredientJson(string? Name, string? Quantity);
-
-    private sealed record StepJson(int Order, string? Instruction);
-
+    
     private static string ExtractJson(string content)
     {
         var trimmed = content.Trim();
@@ -105,4 +87,20 @@ public sealed class OpenAiRecipeParser(HttpClient httpClient, IOptions<OpenAiOpt
 
         return trimmed.Trim();
     }
+
+    private sealed record ChatCompletionResponse(IReadOnlyList<ChatChoice> Choices);
+
+    private sealed record ChatChoice(ChatMessage Message);
+
+    private sealed record ChatMessage(string Content);
+
+    private sealed record RecipeJson(
+        string? Title,
+        string? Description,
+        IReadOnlyList<IngredientJson>? Ingredients,
+        IReadOnlyList<StepJson>? Steps);
+
+    private sealed record IngredientJson(string? Name, string? Quantity);
+
+    private sealed record StepJson(int Order, string? Instruction);
 }

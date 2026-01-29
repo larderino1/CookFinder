@@ -3,6 +3,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace CookFinder.Bot.Models;
 
+
 public sealed class Recipe
 {
     [BsonId]
