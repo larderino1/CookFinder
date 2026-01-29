@@ -132,8 +132,15 @@
   <data name="ActionNutrition" xml:space="preserve">
     <value>Харчування</value>
   </data>
+  <data name="ActionFinishCooking" xml:space="preserve">
+    <value>Завершити</value>
+  </data>
   <data name="CookingStep" xml:space="preserve">
-    <value>Крок {0} з {1}:\n{2}</value>
+    <value>Крок {0} з {1}:
+{2}</value>
+  </data>
+  <data name="CookingFinished" xml:space="preserve">
+    <value>Смачного! Ви завершили цей рецепт.</value>
   </data>
   <data name="CookingNoSteps" xml:space="preserve">
     <value>У цьому рецепті немає кроків.</value>
@@ -145,7 +152,19 @@
     <value>Видалено з улюблених.</value>
   </data>
   <data name="InfoMessage" xml:space="preserve">
-    <value>Надішліть посилання на коротке відео, щоб зберегти рецепт. Переглядайте категорії, шукайте за назвою або інгредієнтом, додавайте в улюблені, підбирайте рецепти через /комора, дивіться харчування й готуйте крок за кроком з кнопками.</value>
+    <value>Надішліть посилання на коротке відео, щоб зберегти рецепт.
+
+Команди:
+• /start — Запустити бота й обрати мову.
+• /language — Змінити мову.
+• /categories — Переглянути категорії рецептів.
+• /search &lt;назва&gt; — Знайти рецепти за назвою.
+• /ingredients &lt;інгредієнт&gt; — Знайти рецепти за інгредієнтом.
+• /favorites — Показати улюблені.
+• /pantry &lt;інгредієнти&gt; — Підібрати рецепти з наявних інгредієнтів.
+• /nutrition &lt;назва рецепта&gt; — Оцінити харчову цінність рецепта.
+
+Також можна готувати крок за кроком за допомогою кнопок на картці рецепта.</value>
   </data>
   <data name="NoRecipesInCategory" xml:space="preserve">
     <value>У категорії {0} поки немає рецептів.</value>

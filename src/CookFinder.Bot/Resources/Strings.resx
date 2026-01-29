@@ -132,8 +132,15 @@
   <data name="ActionNutrition" xml:space="preserve">
     <value>Nutrition</value>
   </data>
+  <data name="ActionFinishCooking" xml:space="preserve">
+    <value>Finish</value>
+  </data>
   <data name="CookingStep" xml:space="preserve">
-    <value>Step {0} of {1}:\n{2}</value>
+    <value>Step {0} of {1}:
+{2}</value>
+  </data>
+  <data name="CookingFinished" xml:space="preserve">
+    <value>Bon appétit! You finished this recipe.</value>
   </data>
   <data name="CookingNoSteps" xml:space="preserve">
     <value>No steps were found for this recipe.</value>
@@ -145,7 +152,19 @@
     <value>Removed from favorites.</value>
   </data>
   <data name="InfoMessage" xml:space="preserve">
-    <value>Send a short video link to save a recipe. Browse by categories, search by name or ingredient, mark favorites, match recipes with /pantry ingredients, get nutrition, and cook step-by-step with buttons.</value>
+    <value>Send a short video link to save a recipe.
+
+Commands:
+• /start — Start the bot and choose language.
+• /language — Change language.
+• /categories — Browse recipe categories.
+• /search &lt;name&gt; — Find recipes by title.
+• /ingredients &lt;ingredient&gt; — Find recipes by ingredient.
+• /favorites — Show saved favorites.
+• /pantry &lt;ingredients&gt; — Match recipes you can cook.
+• /nutrition &lt;recipe name&gt; — Estimate nutrition for a recipe.
+
+You can also cook step-by-step using the buttons on a recipe card.</value>
   </data>
   <data name="NoRecipesInCategory" xml:space="preserve">
     <value>No recipes in {0} yet.</value>
