@@ -23,7 +23,7 @@ public static class RecipeFormatter
         builder.AppendLine("*Steps*");
         foreach (var step in recipe.Steps.OrderBy(step => step.Order))
         {
-            builder.AppendLine($"{step.Order}. {Escape(step.Instruction)}");
+            builder.AppendLine($"{step.Order}\\. {Escape(step.Instruction)}");
         }
 
         builder.AppendLine();
