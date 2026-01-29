@@ -1,7 +1,6 @@
 using CookFinder.Bot.Models;
-using Microsoft.Extensions.Logging;
 
-namespace CookFinder.Bot.Services;
+namespace CookFinder.Bot.Services.Recipes;
 
 public sealed class StubRecipeExtractor(ILogger<StubRecipeExtractor> logger) : IRecipeExtractor
 {

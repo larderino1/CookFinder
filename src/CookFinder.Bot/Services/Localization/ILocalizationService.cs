@@ -1,4 +1,4 @@
-namespace CookFinder.Bot.Services;
+namespace CookFinder.Bot.Services.Localization;
 
 public interface ILocalizationService
 {

@@ -1,9 +1,8 @@
 using System.Text.Json;
 using CookFinder.Bot.Configurations;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace CookFinder.Bot.Services;
+namespace CookFinder.Bot.Services.Metadata;
 
 public sealed class YouTubeMetadataClient(HttpClient httpClient, IOptions<VideoSourceOptions> options, ILogger<YouTubeMetadataClient> logger) : IVideoMetadataClient
 {

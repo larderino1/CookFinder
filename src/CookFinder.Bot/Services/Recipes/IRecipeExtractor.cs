@@ -1,6 +1,6 @@
 using CookFinder.Bot.Models;
 
-namespace CookFinder.Bot.Services;
+namespace CookFinder.Bot.Services.Recipes;
 
 public interface IRecipeExtractor
 {

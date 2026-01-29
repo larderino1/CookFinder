@@ -1,6 +1,7 @@
 using CookFinder.Bot.Models;
+using CookFinder.Bot.Services.Metadata;
 
-namespace CookFinder.Bot.Services;
+namespace CookFinder.Bot.Services.Parsing;
 
 public interface IRecipeParser
 {

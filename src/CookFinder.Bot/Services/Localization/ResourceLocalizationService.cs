@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Resources;
 
-namespace CookFinder.Bot.Services;
+namespace CookFinder.Bot.Services.Localization;
 
 public sealed class ResourceLocalizationService : ILocalizationService
 {
