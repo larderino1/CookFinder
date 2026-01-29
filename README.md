@@ -63,15 +63,18 @@ Use the steps below to create the required credentials for each service and then
 7. Use the Graph API Explorer (or your own auth flow) to generate a long-lived access token.
 8. Paste it into `VideoSources:InstagramAccessToken` in `appsettings.json`.
 
-#### TikTok API Key (if available)
+#### TikTok (oEmbed, no API key required)
 
-1. Sign up at [TikTok for Developers](https://developers.tiktok.com/).
-2. Create an app and follow the verification/approval flow.
-3. Once approved, generate credentials (API key or access token, depending on the product).
-4. Paste the key into `VideoSources:TikTokApiKey` in `appsettings.json`.
+For basic metadata (title/author/thumbnail), TikTok provides an unauthenticated oEmbed endpoint,
+so you do not need to register an API client for MVP usage:
 
-> Note: TikTok’s official APIs are limited and may require approval. For the MVP, you can leave the
-> TikTok key empty while using the stub metadata client.
+```
+https://www.tiktok.com/oembed?url=https://vm.tiktok.com/ZNRArd1x3
+```
+
+If you still choose to use TikTok’s official APIs later, you can request access via
+[TikTok for Developers](https://developers.tiktok.com/) and store credentials in
+`VideoSources:TikTokApiKey`.
 
 ### Set up MongoDB locally
 
