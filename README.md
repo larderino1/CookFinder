@@ -50,10 +50,12 @@ Use the steps below to create the required credentials for each service and then
 #### Instagram Graph API Access Token
 
 1. Go to the [Meta for Developers](https://developers.facebook.com/) portal and create an app.
-2. Add the **Instagram Graph API** product.
-3. Create or connect a Facebook Page and an Instagram Business/Creator account.
-4. Use the Graph API Explorer (or your own auth flow) to generate a long-lived access token.
-5. Paste it into `VideoSources:InstagramAccessToken` in `appsettings.json`.
+2. If you do not see **Instagram Graph API** in the use-case list, pick **Manage messaging & content on Instagram**
+   or **Embed Facebook, Instagram and Threads content in other websites** to create the app.
+3. After the app is created, open the app dashboard and click **Add product**, then add **Instagram Graph API**.
+4. Create or connect a Facebook Page and an Instagram Business/Creator account.
+5. Use the Graph API Explorer (or your own auth flow) to generate a long-lived access token.
+6. Paste it into `VideoSources:InstagramAccessToken` in `appsettings.json`.
 
 #### TikTok API Key (if available)
 
