@@ -31,7 +31,7 @@
     <value>Рецепт збережено! Використовуйте /категорії для перегляду або /пошук &lt;назва&gt; для пошуку.</value>
   </data>
   <data name="MainMenu" xml:space="preserve">
-    <value>Меню</value>
+    <value>Оберіть наступну дію...</value>
   </data>
   <data name="MenuCategories" xml:space="preserve">
     <value>Категорії</value>
@@ -109,7 +109,11 @@
     <value>Оцінка харчування зараз недоступна.</value>
   </data>
   <data name="NutritionResult" xml:space="preserve">
-    <value>Оцінка харчування на порцію:\nКалорії: {0} ккал\nБілки: {1} г\nВуглеводи: {2} г\nЖири: {3} г</value>
+    <value>Оцінка харчування на порцію:
+Калорії: {0} ккал
+Білки: {1} г
+Вуглеводи: {2} г
+Жири: {3} г</value>
   </data>
   <data name="ActionStartCooking" xml:space="preserve">
     <value>Почати готувати</value>
