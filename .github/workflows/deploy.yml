@@ -26,8 +26,11 @@ jobs:
       - name: Restore
         run: dotnet restore src/CookFinder.Bot/CookFinder.Bot.csproj
 
+      - name: Build
+        run: dotnet build src/CookFinder.Bot/CookFinder.Bot.csproj -c Release --no-restore
+
       - name: Publish
-        run: dotnet publish src/CookFinder.Bot/CookFinder.Bot.csproj -c Release -o out
+        run: dotnet publish src/CookFinder.Bot/CookFinder.Bot.csproj -c Release -o out --no-build
 
       - name: Package
         run: tar -czf cookfinder.tar.gz -C out .
@@ -38,6 +41,7 @@ jobs:
           host: ${{ secrets.DO_HOST }}
           username: ${{ secrets.DO_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
+          passphrase: ${{ secrets.DO_SSH_PASSPHRASE }}
           port: ${{ secrets.DO_SSH_PORT || 22 }}
           source: cookfinder.tar.gz
           target: /tmp
@@ -48,6 +52,7 @@ jobs:
           host: ${{ secrets.DO_HOST }}
           username: ${{ secrets.DO_USER }}
           key: ${{ secrets.DO_SSH_KEY }}
+          passphrase: ${{ secrets.DO_SSH_PASSPHRASE }}
           port: ${{ secrets.DO_SSH_PORT || 22 }}
           script: |
             set -euo pipefail
