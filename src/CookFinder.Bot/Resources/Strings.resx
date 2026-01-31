@@ -30,6 +30,9 @@
   <data name="RecipeSaved" xml:space="preserve">
     <value>Recipe saved! Use /categories to browse or /search &lt;name&gt; to find recipes.</value>
   </data>
+  <data name="RecipeAlreadyAdded" xml:space="preserve">
+    <value>This recipe is already saved. Here it is:</value>
+  </data>
   <data name="MainMenu" xml:space="preserve">
     <value>Choose what to do next...</value>
   </data>
