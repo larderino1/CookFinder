@@ -10,8 +10,8 @@ public sealed class InstagramMetadataClient(HttpClient httpClient, IOptions<Vide
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private const string GraphqlDocId = "10015901848480474";
-    private const string GraphqlLsd = "AVqbxe3J_YA";
-    private const string AsbdId = "129477";
+    private const string DefaultGraphqlLsd = "AVqbxe3J_YA";
+    private const string DefaultAsbdId = "129477";
     private static readonly Regex InstagramIdRegex = new(
         @"instagram\.com\/(?:[A-Za-z0-9_.]+\/)?(p|reels|reel|stories)\/([A-Za-z0-9-_]+)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
@@ -21,14 +21,38 @@ public sealed class InstagramMetadataClient(HttpClient httpClient, IOptions<Vide
         EnsureInstagramHeadersConfigured();
 
         var shortcode = GetShortcode(sourceUrl);
-        var graphqlUri = BuildGraphqlUri(shortcode);
+        var graphqlUri = BuildGraphqlUri();
         using var request = new HttpRequestMessage(HttpMethod.Post, graphqlUri);
         request.Headers.TryAddWithoutValidation("User-Agent", options.Value.InstagramUserAgent);
         request.Headers.TryAddWithoutValidation("X-IG-App-ID", options.Value.InstagramAppId);
-        request.Headers.TryAddWithoutValidation("X-FB-LSD", GraphqlLsd);
-        request.Headers.TryAddWithoutValidation("X-ASBD-ID", AsbdId);
+        request.Headers.TryAddWithoutValidation("Accept", "*/*");
+        request.Headers.TryAddWithoutValidation("Accept-Language", "en-US,en;q=0.9");
+        request.Headers.TryAddWithoutValidation("Origin", "https://www.instagram.com");
+        request.Headers.TryAddWithoutValidation("Referer", "https://www.instagram.com/");
+        request.Headers.TryAddWithoutValidation("X-FB-LSD", ResolveHeaderValue(options.Value.InstagramLsd, DefaultGraphqlLsd));
+        request.Headers.TryAddWithoutValidation("X-ASBD-ID", ResolveHeaderValue(options.Value.InstagramAsbdId, DefaultAsbdId));
         request.Headers.TryAddWithoutValidation("Sec-Fetch-Site", "same-origin");
-        request.Content = new StringContent(string.Empty, System.Text.Encoding.UTF8, "application/x-www-form-urlencoded");
+        if (!string.IsNullOrWhiteSpace(options.Value.InstagramFriendlyName))
+        {
+            request.Headers.TryAddWithoutValidation("X-FB-Friendly-Name", options.Value.InstagramFriendlyName);
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.Value.InstagramCsrfToken))
+        {
+            request.Headers.TryAddWithoutValidation("X-CSRFToken", options.Value.InstagramCsrfToken);
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.Value.InstagramCookies))
+        {
+            request.Headers.TryAddWithoutValidation("Cookie", options.Value.InstagramCookies);
+        }
+
+        request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["variables"] = JsonSerializer.Serialize(new { shortcode }, JsonOptions),
+            ["doc_id"] = GraphqlDocId,
+            ["lsd"] = ResolveHeaderValue(options.Value.InstagramLsd, DefaultGraphqlLsd)
+        });
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -83,11 +107,9 @@ public sealed class InstagramMetadataClient(HttpClient httpClient, IOptions<Vide
         return match.Groups[2].Value;
     }
 
-    private static Uri BuildGraphqlUri(string shortcode)
+    private static Uri BuildGraphqlUri()
     {
-        var variables = JsonSerializer.Serialize(new { shortcode }, JsonOptions);
-        var query = $"variables={UrlEncoder.Default.Encode(variables)}&doc_id={GraphqlDocId}&lsd={GraphqlLsd}";
-        return new UriBuilder("https://www.instagram.com/api/graphql") { Query = query }.Uri;
+        return new Uri("https://www.instagram.com/api/graphql");
     }
 
     private static string? GetCaption(JsonElement media)
@@ -143,6 +165,11 @@ public sealed class InstagramMetadataClient(HttpClient httpClient, IOptions<Vide
         }
 
         return true;
+    }
+
+    private static string ResolveHeaderValue(string configuredValue, string fallbackValue)
+    {
+        return string.IsNullOrWhiteSpace(configuredValue) ? fallbackValue : configuredValue;
     }
 
     private static bool IsJsonResponse(HttpResponseMessage response, string content)
