@@ -73,6 +73,15 @@ public sealed class MongoRecipeRepository : IRecipeRepository
         return await _recipes.Find(filter).FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<Recipe?> GetBySourceUrlAsync(long userId, string sourceUrl, CancellationToken cancellationToken)
+    {
+        var filter = Builders<Recipe>.Filter.And(
+            Builders<Recipe>.Filter.Eq(r => r.UserId, userId),
+            Builders<Recipe>.Filter.Eq(r => r.SourceUrl, sourceUrl));
+
+        return await _recipes.Find(filter).FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task SetFavoriteAsync(long userId, string id, bool isFavorite, CancellationToken cancellationToken)
     {
         var filter = Builders<Recipe>.Filter.And(

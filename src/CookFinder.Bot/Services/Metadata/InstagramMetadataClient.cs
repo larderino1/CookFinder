@@ -1,5 +1,6 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using CookFinder.Bot.Configurations;
 using Microsoft.Extensions.Options;
 
@@ -8,32 +9,177 @@ namespace CookFinder.Bot.Services.Metadata;
 public sealed class InstagramMetadataClient(HttpClient httpClient, IOptions<VideoSourceOptions> options, ILogger<InstagramMetadataClient> logger) : IVideoMetadataClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private const string GraphqlDocId = "10015901848480474";
+    private const string DefaultGraphqlLsd = "AVqbxe3J_YA";
+    private const string DefaultAsbdId = "129477";
+    private static readonly Regex InstagramIdRegex = new(
+        @"instagram\.com\/(?:[A-Za-z0-9_.]+\/)?(p|reels|reel|stories)\/([A-Za-z0-9-_]+)",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     public async Task<VideoMetadata> GetMetadataAsync(Uri sourceUrl, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(options.Value.InstagramAccessToken))
+        EnsureInstagramHeadersConfigured();
+
+        var shortcode = GetShortcode(sourceUrl);
+        var graphqlUri = BuildGraphqlUri();
+        using var request = new HttpRequestMessage(HttpMethod.Post, graphqlUri);
+        request.Headers.TryAddWithoutValidation("User-Agent", options.Value.InstagramUserAgent);
+        request.Headers.TryAddWithoutValidation("X-IG-App-ID", options.Value.InstagramAppId);
+        request.Headers.TryAddWithoutValidation("Accept", "*/*");
+        request.Headers.TryAddWithoutValidation("Accept-Language", "en-US,en;q=0.9");
+        request.Headers.TryAddWithoutValidation("Origin", "https://www.instagram.com");
+        request.Headers.TryAddWithoutValidation("Referer", "https://www.instagram.com/");
+        request.Headers.TryAddWithoutValidation("X-FB-LSD", ResolveHeaderValue(options.Value.InstagramLsd, DefaultGraphqlLsd));
+        request.Headers.TryAddWithoutValidation("X-ASBD-ID", ResolveHeaderValue(options.Value.InstagramAsbdId, DefaultAsbdId));
+        request.Headers.TryAddWithoutValidation("Sec-Fetch-Site", "same-origin");
+        if (!string.IsNullOrWhiteSpace(options.Value.InstagramFriendlyName))
         {
-            throw new InvalidOperationException("Instagram access token is missing.");
+            request.Headers.TryAddWithoutValidation("X-FB-Friendly-Name", options.Value.InstagramFriendlyName);
         }
 
-        var encodedUrl = UrlEncoder.Default.Encode(sourceUrl.ToString());
-        var requestUri = $"https://graph.facebook.com/v19.0/instagram_oembed?url={encodedUrl}&access_token={options.Value.InstagramAccessToken}";
-        using var response = await httpClient.GetAsync(requestUri, cancellationToken);
+        if (!string.IsNullOrWhiteSpace(options.Value.InstagramCsrfToken))
+        {
+            request.Headers.TryAddWithoutValidation("X-CSRFToken", options.Value.InstagramCsrfToken);
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.Value.InstagramCookies))
+        {
+            request.Headers.TryAddWithoutValidation("Cookie", options.Value.InstagramCookies);
+        }
+
+        request.Content = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["variables"] = JsonSerializer.Serialize(new { shortcode }, JsonOptions),
+            ["doc_id"] = GraphqlDocId,
+            ["lsd"] = ResolveHeaderValue(options.Value.InstagramLsd, DefaultGraphqlLsd)
+        });
+
+        using var response = await httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
-        var payload = JsonSerializer.Deserialize<InstagramOembedResponse>(content, JsonOptions)
-            ?? throw new InvalidOperationException("Failed to parse Instagram response.");
+        if (!IsJsonResponse(response, content))
+        {
+            var preview = content.Length > 200 ? content[..200] : content;
+            logger.LogWarning("Instagram response was not JSON. Content-Type: {ContentType}. Preview: {Preview}", response.Content.Headers.ContentType?.MediaType, preview);
+            throw new InvalidOperationException("Instagram response was not JSON. Check headers like User-Agent and X-IG-App-ID.");
+        }
+
+        using var document = JsonDocument.Parse(content);
+        if (!TryGetElement(document.RootElement, out var media, "data", "xdt_shortcode_media"))
+        {
+            throw new InvalidOperationException("Failed to parse Instagram response.");
+        }
+
+        var caption = GetCaption(media);
+        var author = GetOwnerName(media) ?? "Instagram";
+        var title = !string.IsNullOrWhiteSpace(caption)
+            ? caption
+            : $"Instagram recipe from {sourceUrl.Host}";
 
         var metadata = new VideoMetadata(
             sourceUrl,
-            payload.Title ?? $"Instagram recipe from {sourceUrl.Host}",
-            string.Empty,
-            payload.AuthorName ?? "Instagram");
+            title,
+            caption ?? string.Empty,
+            author);
 
         logger.LogInformation("Instagram metadata fetched for {Url}.", sourceUrl);
         return metadata;
     }
 
-    private sealed record InstagramOembedResponse(string? Title, string? AuthorName);
+    private void EnsureInstagramHeadersConfigured()
+    {
+        if (string.IsNullOrWhiteSpace(options.Value.InstagramUserAgent) ||
+            string.IsNullOrWhiteSpace(options.Value.InstagramAppId))
+        {
+            throw new InvalidOperationException("Instagram headers are missing.");
+        }
+    }
+
+    private static string GetShortcode(Uri sourceUrl)
+    {
+        var match = InstagramIdRegex.Match(sourceUrl.ToString());
+        if (!match.Success || match.Groups.Count < 3)
+        {
+            throw new InvalidOperationException("Invalid Instagram URL.");
+        }
+
+        return match.Groups[2].Value;
+    }
+
+    private static Uri BuildGraphqlUri()
+    {
+        return new Uri("https://www.instagram.com/api/graphql");
+    }
+
+    private static string? GetCaption(JsonElement media)
+    {
+        if (!TryGetElement(media, out var captionElement, "edge_media_to_caption") ||
+            !captionElement.TryGetProperty("edges", out var edges) ||
+            edges.ValueKind != JsonValueKind.Array ||
+            edges.GetArrayLength() == 0)
+        {
+            return null;
+        }
+
+        var firstEdge = edges[0];
+        if (TryGetElement(firstEdge, out var node, "node") &&
+            node.TryGetProperty("text", out var textElement) &&
+            textElement.ValueKind == JsonValueKind.String)
+        {
+            return textElement.GetString();
+        }
+
+        return null;
+    }
+
+    private static string? GetOwnerName(JsonElement media)
+    {
+        if (!TryGetElement(media, out var owner, "owner"))
+        {
+            return null;
+        }
+
+        if (owner.TryGetProperty("username", out var username) && username.ValueKind == JsonValueKind.String)
+        {
+            return username.GetString();
+        }
+
+        if (owner.TryGetProperty("full_name", out var fullName) && fullName.ValueKind == JsonValueKind.String)
+        {
+            return fullName.GetString();
+        }
+
+        return null;
+    }
+
+    private static bool TryGetElement(JsonElement element, out JsonElement value, params string[] path)
+    {
+        value = element;
+        foreach (var segment in path)
+        {
+            if (value.ValueKind != JsonValueKind.Object || !value.TryGetProperty(segment, out value))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static string ResolveHeaderValue(string configuredValue, string fallbackValue)
+    {
+        return string.IsNullOrWhiteSpace(configuredValue) ? fallbackValue : configuredValue;
+    }
+
+    private static bool IsJsonResponse(HttpResponseMessage response, string content)
+    {
+        var mediaType = response.Content.Headers.ContentType?.MediaType;
+        if (!string.IsNullOrWhiteSpace(mediaType) && mediaType.Contains("json", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return content.TrimStart().StartsWith('{');
+    }
 }

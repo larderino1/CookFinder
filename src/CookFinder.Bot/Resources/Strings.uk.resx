@@ -30,6 +30,9 @@
   <data name="RecipeSaved" xml:space="preserve">
     <value>Рецепт збережено! Використовуйте /категорії для перегляду або /пошук &lt;назва&gt; для пошуку.</value>
   </data>
+  <data name="RecipeAlreadyAdded" xml:space="preserve">
+    <value>Цей рецепт уже збережено. Ось він:</value>
+  </data>
   <data name="MainMenu" xml:space="preserve">
     <value>Оберіть наступну дію...</value>
   </data>

@@ -11,6 +11,7 @@ public interface IRecipeRepository
     Task<IReadOnlyList<Recipe>> GetFavoritesAsync(long userId, CancellationToken cancellationToken);
     Task<IReadOnlyList<Recipe>> GetAllAsync(long userId, CancellationToken cancellationToken);
     Task<Recipe?> GetByIdAsync(long userId, string id, CancellationToken cancellationToken);
+    Task<Recipe?> GetBySourceUrlAsync(long userId, string sourceUrl, CancellationToken cancellationToken);
     Task SetFavoriteAsync(long userId, string id, bool isFavorite, CancellationToken cancellationToken);
     Task<IReadOnlyList<string>> GetCategoriesAsync(long userId, CancellationToken cancellationToken);
 }

@@ -179,6 +179,17 @@ public sealed class TelegramBotService(
             return;
         }
 
+        var existingRecipe = await repository.GetBySourceUrlAsync(userId, url.ToString(), cancellationToken);
+        if (existingRecipe is not null)
+        {
+            await botClient.SendMessage(
+                message.Chat.Id,
+                localization.GetString("RecipeAlreadyAdded", language),
+                cancellationToken: cancellationToken);
+            await SendRecipeSummaryAsync(message.Chat.Id, existingRecipe, language, cancellationToken);
+            return;
+        }
+
         await botClient.SendMessage(
             message.Chat.Id,
             localization.GetString("Drafting", language),
@@ -230,13 +241,6 @@ public sealed class TelegramBotService(
         await repository.SaveAsync(recipe, cancellationToken);
 
         await SendRecipeSummaryAsync(message.Chat.Id, recipe, language, cancellationToken);
-
-        await botClient.SendMessage(
-            message.Chat.Id,
-            localization.GetString("RecipeSaved", language),
-            cancellationToken: cancellationToken);
-
-        await SendMainMenuAsync(message.Chat.Id, language, cancellationToken);
     }
 
     private async Task HandleCallbackAsync(CallbackQuery query, CancellationToken cancellationToken)
