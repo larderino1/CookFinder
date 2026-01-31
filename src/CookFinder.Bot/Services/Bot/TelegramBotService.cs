@@ -230,13 +230,6 @@ public sealed class TelegramBotService(
         await repository.SaveAsync(recipe, cancellationToken);
 
         await SendRecipeSummaryAsync(message.Chat.Id, recipe, language, cancellationToken);
-
-        await botClient.SendMessage(
-            message.Chat.Id,
-            localization.GetString("RecipeSaved", language),
-            cancellationToken: cancellationToken);
-
-        await SendMainMenuAsync(message.Chat.Id, language, cancellationToken);
     }
 
     private async Task HandleCallbackAsync(CallbackQuery query, CancellationToken cancellationToken)
