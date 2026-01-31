@@ -34,6 +34,13 @@ public sealed class InstagramMetadataClient(HttpClient httpClient, IOptions<Vide
         response.EnsureSuccessStatusCode();
 
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
+        if (!IsJsonResponse(response, content))
+        {
+            var preview = content.Length > 200 ? content[..200] : content;
+            logger.LogWarning("Instagram response was not JSON. Content-Type: {ContentType}. Preview: {Preview}", response.Content.Headers.ContentType?.MediaType, preview);
+            throw new InvalidOperationException("Instagram response was not JSON. Check headers like User-Agent and X-IG-App-ID.");
+        }
+
         using var document = JsonDocument.Parse(content);
         if (!TryGetElement(document.RootElement, out var media, "data", "xdt_shortcode_media"))
         {
@@ -136,5 +143,16 @@ public sealed class InstagramMetadataClient(HttpClient httpClient, IOptions<Vide
         }
 
         return true;
+    }
+
+    private static bool IsJsonResponse(HttpResponseMessage response, string content)
+    {
+        var mediaType = response.Content.Headers.ContentType?.MediaType;
+        if (!string.IsNullOrWhiteSpace(mediaType) && mediaType.Contains("json", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return content.TrimStart().StartsWith('{');
     }
 }
