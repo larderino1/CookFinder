@@ -1,0 +1,69 @@
+name: Deploy to DigitalOcean
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+          include-prerelease: true
+
+      - name: Restore
+        run: dotnet restore src/CookFinder.Bot/CookFinder.Bot.csproj
+
+      - name: Publish
+        run: dotnet publish src/CookFinder.Bot/CookFinder.Bot.csproj -c Release -o out
+
+      - name: Package
+        run: tar -czf cookfinder.tar.gz -C out .
+
+      - name: Upload package
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: ${{ secrets.DO_SSH_PORT || 22 }}
+          source: cookfinder.tar.gz
+          target: /tmp
+
+      - name: Deploy on Droplet
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DO_HOST }}
+          username: ${{ secrets.DO_USER }}
+          key: ${{ secrets.DO_SSH_KEY }}
+          port: ${{ secrets.DO_SSH_PORT || 22 }}
+          script: |
+            set -euo pipefail
+            APP_DIR="${{ secrets.DO_APP_DIR }}"
+            SERVICE_NAME="${{ secrets.DO_SERVICE_NAME }}"
+
+            if [ -z "$APP_DIR" ]; then
+              echo "DO_APP_DIR secret is required"
+              exit 1
+            fi
+
+            if [ -z "$SERVICE_NAME" ]; then
+              echo "DO_SERVICE_NAME secret is required"
+              exit 1
+            fi
+
+            mkdir -p "$APP_DIR"
+            tar -xzf /tmp/cookfinder.tar.gz -C "$APP_DIR"
+            systemctl restart "$SERVICE_NAME"
