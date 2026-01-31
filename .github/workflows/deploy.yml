@@ -71,4 +71,4 @@ jobs:
 
             mkdir -p "$APP_DIR"
             tar -xzf /tmp/cookfinder.tar.gz -C "$APP_DIR"
-            systemctl restart "$SERVICE_NAME"
+            sudo systemctl restart "$SERVICE_NAME"
