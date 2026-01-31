@@ -6,5 +6,7 @@ public sealed class VideoSourceOptions
 
     public string YouTubeApiKey { get; init; } = string.Empty;
     public string InstagramAccessToken { get; init; } = string.Empty;
+    public string InstagramUserAgent { get; init; } = string.Empty;
+    public string InstagramAppId { get; init; } = string.Empty;
     public string TikTokApiKey { get; init; } = string.Empty;
 }
