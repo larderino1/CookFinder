@@ -2,7 +2,6 @@ using CookFinder.Bot.Models;
 using CookFinder.Bot.Repositories;
 using CookFinder.Bot.Services.Localization;
 using CookFinder.Bot.Services.Recipes;
-using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -30,8 +29,6 @@ public sealed class TelegramBotService(
         "youtu.be",
         "instagram.com"
     };
-
-    private static readonly Regex UrlRegex = new(@"https?:\/\/\S+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -169,7 +166,7 @@ public sealed class TelegramBotService(
             return;
         }
 
-        if (!TryExtractSupportedUrl(message.Text, out var url))
+        if (!TryExtractSupportedUrl(message, out var url))
         {
             await botClient.SendMessage(
                 message.Chat.Id,
@@ -242,33 +239,84 @@ public sealed class TelegramBotService(
         await SendRecipeSummaryAsync(message.Chat.Id, recipe, language, cancellationToken);
     }
 
-    private static bool TryExtractSupportedUrl(string messageText, out Uri url)
+    private static bool TryExtractSupportedUrl(Message message, out Uri url)
     {
         url = null!;
-        var parts = UrlRegex.Matches(messageText)
-            .Select(match => match.Value.TrimEnd('.', ',', ';', ':', '!', '?', ')', ']', '"', '\''));
 
-        foreach (var part in parts)
+        if (message.Text is null)
         {
-            if (!Uri.TryCreate(part, UriKind.Absolute, out var candidate))
-            {
-                continue;
-            }
+            return false;
+        }
 
-            if (candidate.Scheme is not ("http" or "https"))
+        if (message.Entities is not null)
+        {
+            foreach (var entity in message.Entities)
             {
-                continue;
-            }
+                if (entity.Type == MessageEntityType.TextLink && entity.Url is not null
+                    && TryExtractSupportedUrl(entity.Url.ToString(), out url))
+                {
+                    return true;
+                }
 
-            if (!SupportedHostSuffixes.Any(suffix =>
-                    candidate.Host.Equals(suffix, StringComparison.OrdinalIgnoreCase)
-                    || candidate.Host.EndsWith($".{suffix}", StringComparison.OrdinalIgnoreCase)))
+                if (entity.Type == MessageEntityType.Url)
+                {
+                    var part = message.Text.Substring(entity.Offset, entity.Length);
+                    if (TryExtractSupportedUrl(part, out url))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        foreach (var part in message.Text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (TryExtractSupportedUrl(part, out url))
             {
-                continue;
+                return true;
             }
+        }
 
-            url = candidate;
+        return false;
+    }
+
+    private static bool TryExtractSupportedUrl(string value, out Uri url)
+    {
+        url = null!;
+        var part = value.Trim('(', '[', '"', '\'')
+            .TrimEnd('.', ',', ';', ':', '!', '?', ')', ']', '"', '\'', '\\');
+
+        if (!TryCreateUri(part, out var candidate))
+        {
+            return false;
+        }
+
+        if (candidate.Scheme is not ("http" or "https"))
+        {
+            return false;
+        }
+
+        if (!SupportedHostSuffixes.Any(suffix =>
+                candidate.Host.Equals(suffix, StringComparison.OrdinalIgnoreCase)
+                || candidate.Host.EndsWith($".{suffix}", StringComparison.OrdinalIgnoreCase)))
+        {
+            return false;
+        }
+
+        url = candidate;
+        return true;
+    }
+
+    private static bool TryCreateUri(string value, out Uri uri)
+    {
+        if (Uri.TryCreate(value, UriKind.Absolute, out uri))
+        {
             return true;
+        }
+
+        if (!value.Contains("://", StringComparison.Ordinal))
+        {
+            return Uri.TryCreate($"https://{value}", UriKind.Absolute, out uri);
         }
 
         return false;
