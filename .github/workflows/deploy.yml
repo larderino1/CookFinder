@@ -15,6 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PACKAGE_NAME: cookfinder-${{ github.sha }}.tar.gz
+      DO_API_TOKEN: ${{ secrets.DO_API_TOKEN || vars.DO_API_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,13 +29,13 @@ jobs:
           include-prerelease: true
 
       - name: Setup doctl
-        if: ${{ secrets.DO_API_TOKEN != '' }}
+        if: ${{ env.DO_API_TOKEN != '' }}
         uses: digitalocean/action-doctl@v2
         with:
-          token: ${{ secrets.DO_API_TOKEN }}
+          token: ${{ env.DO_API_TOKEN }}
 
       - name: Ensure droplet is running
-        if: ${{ secrets.DO_API_TOKEN != '' }}
+        if: ${{ env.DO_API_TOKEN != '' }}
         env:
           DO_HOST: ${{ secrets.DO_HOST }}
         run: |
@@ -74,7 +75,7 @@ jobs:
           exit 1
 
       - name: Skip droplet power-on check (no DO API token)
-        if: ${{ secrets.DO_API_TOKEN == '' }}
+        if: ${{ env.DO_API_TOKEN == '' }}
         run: echo "DO_API_TOKEN is not configured; skipping doctl setup and droplet power-on check."
 
       - name: Restore
