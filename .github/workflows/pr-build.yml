@@ -29,6 +29,45 @@ jobs:
           dotnet-version: 10.0.x
           include-prerelease: true
 
+      - name: Validate deploy secrets configuration
+        env:
+          DO_API_TOKEN_SECRET: ${{ secrets.DO_API_TOKEN }}
+          DO_API_TOKEN_VAR: ${{ vars.DO_API_TOKEN }}
+          DO_HOST: ${{ secrets.DO_HOST }}
+          DO_USER: ${{ secrets.DO_USER }}
+          DO_SSH_KEY: ${{ secrets.DO_SSH_KEY }}
+          DO_SSH_PASSPHRASE: ${{ secrets.DO_SSH_PASSPHRASE }}
+          DO_APP_DIR: ${{ secrets.DO_APP_DIR }}
+          DO_SERVICE_NAME: ${{ secrets.DO_SERVICE_NAME }}
+        run: |
+          set -euo pipefail
+
+          missing=0
+          required=(
+            DO_HOST
+            DO_USER
+            DO_SSH_KEY
+            DO_SSH_PASSPHRASE
+            DO_APP_DIR
+            DO_SERVICE_NAME
+          )
+
+          for key in "${required[@]}"; do
+            if [ -z "${!key}" ]; then
+              echo "Missing required secret: ${key}"
+              missing=1
+            fi
+          done
+
+          if [ -z "$DO_API_TOKEN_SECRET" ] && [ -z "$DO_API_TOKEN_VAR" ]; then
+            echo "Missing DO_API_TOKEN. Set either repository secret DO_API_TOKEN or repository variable DO_API_TOKEN."
+            missing=1
+          fi
+
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
       - name: Restore
         run: dotnet restore src/CookFinder.Bot/CookFinder.Bot.csproj
 
