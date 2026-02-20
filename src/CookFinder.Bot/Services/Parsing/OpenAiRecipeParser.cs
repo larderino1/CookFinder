@@ -8,12 +8,18 @@ using Microsoft.Extensions.Options;
 
 namespace CookFinder.Bot.Services.Parsing;
 
-public sealed class OpenAiRecipeParser(HttpClient httpClient, IOptions<OpenAiOptions> options) : IRecipeParser
+public sealed class OpenAiRecipeParser(HttpClient httpClient, IOptions<OpenAiOptions> options, ILogger<OpenAiRecipeParser> logger) : IRecipeParser
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public async Task<ParsedRecipe> ParseAsync(VideoMetadata metadata, CancellationToken cancellationToken)
     {
+        logger.LogInformation(
+            "OpenAI parsing started for URL {Url}. TitleLength={TitleLength}, DescriptionLength={DescriptionLength}.",
+            metadata.SourceUrl,
+            metadata.Title.Length,
+            metadata.Description.Length);
+
         if (string.IsNullOrWhiteSpace(options.Value.ApiKey))
         {
             throw new InvalidOperationException("OpenAI API key is missing.");
@@ -45,6 +51,7 @@ public sealed class OpenAiRecipeParser(HttpClient httpClient, IOptions<OpenAiOpt
         request.Content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json");
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
+        logger.LogInformation("OpenAI parser response status: {StatusCode}.", response.StatusCode);
         response.EnsureSuccessStatusCode();
 
         var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -60,6 +67,12 @@ public sealed class OpenAiRecipeParser(HttpClient httpClient, IOptions<OpenAiOpt
         var jsonContent = ExtractJson(content);
         var parsed = JsonSerializer.Deserialize<RecipeJson>(jsonContent, JsonOptions)
             ?? throw new InvalidOperationException("OpenAI response JSON did not match schema.");
+
+        logger.LogInformation(
+            "OpenAI parsing succeeded for URL {Url}. Ingredients={IngredientCount}, Steps={StepCount}.",
+            metadata.SourceUrl,
+            parsed.Ingredients?.Count ?? 0,
+            parsed.Steps?.Count ?? 0);
 
         return new ParsedRecipe(
             parsed.Title ?? metadata.Title,
