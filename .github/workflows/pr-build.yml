@@ -1,0 +1,36 @@
+name: PR Build Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+
+concurrency:
+  group: pr-build-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: ${{ github.event.pull_request.draft == false }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+          include-prerelease: true
+
+      - name: Restore
+        run: dotnet restore src/CookFinder.Bot/CookFinder.Bot.csproj
+
+      - name: Build
+        run: dotnet build src/CookFinder.Bot/CookFinder.Bot.csproj -c Release --no-restore
