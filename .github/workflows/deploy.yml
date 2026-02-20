@@ -30,7 +30,7 @@ jobs:
       - name: Setup doctl
         uses: digitalocean/action-doctl@v2
         with:
-          token: ${{ secrets.DO_API_TOKEN }}
+          token: ${{ secrets.DO_API_TOKEN || secrets.DIGITALOCEAN_ACCESS_TOKEN }}
 
       - name: Ensure droplet is running
         env:
