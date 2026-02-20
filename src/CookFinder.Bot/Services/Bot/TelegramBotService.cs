@@ -22,17 +22,12 @@ public sealed class TelegramBotService(
     ILocalizationService localization,
     ILogger<TelegramBotService> logger) : BackgroundService
 {
-    private static readonly HashSet<string> SupportedHosts = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly string[] SupportedHostSuffixes =
     {
-        "vm.tiktok.com",
-        "vt.tiktok.com",
         "tiktok.com",
-        "www.tiktok.com",
         "youtube.com",
-        "www.youtube.com",
         "youtu.be",
-        "instagram.com",
-        "www.instagram.com"
+        "instagram.com"
     };
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
@@ -171,7 +166,7 @@ public sealed class TelegramBotService(
             return;
         }
 
-        if (!Uri.TryCreate(message.Text.Trim(), UriKind.Absolute, out var url) || !SupportedHosts.Contains(url.Host))
+        if (!TryExtractSupportedUrl(message.Text, out var url))
         {
             await botClient.SendMessage(
                 message.Chat.Id,
@@ -242,6 +237,37 @@ public sealed class TelegramBotService(
         await repository.SaveAsync(recipe, cancellationToken);
 
         await SendRecipeSummaryAsync(message.Chat.Id, recipe, language, cancellationToken);
+    }
+
+    private static bool TryExtractSupportedUrl(string messageText, out Uri url)
+    {
+        url = null!;
+        var parts = messageText.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        foreach (var part in parts)
+        {
+            if (!Uri.TryCreate(part, UriKind.Absolute, out var candidate))
+            {
+                continue;
+            }
+
+            if (candidate.Scheme is not ("http" or "https"))
+            {
+                continue;
+            }
+
+            if (!SupportedHostSuffixes.Any(suffix =>
+                    candidate.Host.Equals(suffix, StringComparison.OrdinalIgnoreCase)
+                    || candidate.Host.EndsWith($".{suffix}", StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            url = candidate;
+            return true;
+        }
+
+        return false;
     }
 
     private async Task HandleCallbackAsync(CallbackQuery query, CancellationToken cancellationToken)
