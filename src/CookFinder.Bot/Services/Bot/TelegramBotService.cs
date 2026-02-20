@@ -25,6 +25,7 @@ public sealed class TelegramBotService(
     private static readonly HashSet<string> SupportedHosts = new(StringComparer.OrdinalIgnoreCase)
     {
         "vm.tiktok.com",
+        "vt.tiktok.com",
         "tiktok.com",
         "www.tiktok.com",
         "youtube.com",
