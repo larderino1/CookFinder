@@ -65,12 +65,21 @@ public sealed class TelegramBotService(
     {
         if (message.Text is null)
         {
+            logger.LogInformation("Skipping message {MessageId} in chat {ChatId} because it has no text.", message.MessageId, message.Chat.Id);
             return;
         }
 
         var userId = message.From?.Id ?? 0;
         var language = await userPreferences.GetLanguageAsync(userId, cancellationToken);
         var command = ParseCommand(message.Text, language);
+        logger.LogInformation(
+            "Handling message {MessageId} for user {UserId} in chat {ChatId}. Language={Language}, Command={Command}, ArgumentLength={ArgumentLength}.",
+            message.MessageId,
+            userId,
+            message.Chat.Id,
+            language,
+            command.Name,
+            command.Argument.Length);
 
         if (command.Name.Equals("start", StringComparison.OrdinalIgnoreCase))
         {
@@ -168,6 +177,11 @@ public sealed class TelegramBotService(
 
         if (!TryExtractSupportedUrl(message, out var url))
         {
+            logger.LogWarning(
+                "Message {MessageId} from user {UserId} failed URL validation. Text preview: {TextPreview}",
+                message.MessageId,
+                userId,
+                message.Text.Length > 200 ? message.Text[..200] : message.Text);
             await botClient.SendMessage(
                 message.Chat.Id,
                 localization.GetString("InvalidLink", language),
@@ -175,9 +189,12 @@ public sealed class TelegramBotService(
             return;
         }
 
+        logger.LogInformation("Validated supported URL {Url} for user {UserId}.", url, userId);
+
         var existingRecipe = await repository.GetBySourceUrlAsync(userId, url.ToString(), cancellationToken);
         if (existingRecipe is not null)
         {
+            logger.LogInformation("Recipe already exists for user {UserId} and URL {Url}. RecipeId={RecipeId}", userId, url, existingRecipe.Id);
             await botClient.SendMessage(
                 message.Chat.Id,
                 localization.GetString("RecipeAlreadyAdded", language),
@@ -191,8 +208,19 @@ public sealed class TelegramBotService(
             localization.GetString("Drafting", language),
             cancellationToken: cancellationToken);
 
+        logger.LogInformation("Starting extraction pipeline for user {UserId}, URL {Url}.", userId, url);
+
         var draft = await extractor.ExtractAsync(userId, url, cancellationToken);
+        logger.LogInformation(
+            "Extraction completed for user {UserId}. Title='{Title}', Ingredients={IngredientCount}, Steps={StepCount}.",
+            userId,
+            draft.Title,
+            draft.Ingredients.Count,
+            draft.Steps.Count);
+
         var categories = await categorizer.CategorizeAsync(draft.Title, draft.Description, cancellationToken);
+        logger.LogInformation("Categorization completed for user {UserId}. Categories={Categories}.", userId, string.Join(", ", categories));
+
         var translated = await translator.TranslateAsync(
             new Recipe
             {
@@ -207,6 +235,13 @@ public sealed class TelegramBotService(
             categories,
             language,
             cancellationToken);
+        logger.LogInformation(
+            "Translation completed for user {UserId}. Language={Language}, Ingredients={IngredientCount}, Steps={StepCount}, Categories={CategoryCount}.",
+            userId,
+            language,
+            translated.Ingredients.Count,
+            translated.Steps.Count,
+            translated.Categories.Count);
 
         var nutrition = await nutritionService.EstimateAsync(
             new Recipe
@@ -221,6 +256,10 @@ public sealed class TelegramBotService(
             },
             language,
             cancellationToken);
+        logger.LogInformation(
+            "Nutrition estimation completed for user {UserId}. HasNutrition={HasNutrition}.",
+            userId,
+            nutrition is not null);
 
         var recipe = new Recipe
         {
@@ -235,8 +274,10 @@ public sealed class TelegramBotService(
         };
 
         await repository.SaveAsync(recipe, cancellationToken);
+        logger.LogInformation("Recipe saved for user {UserId}. RecipeId={RecipeId}, SourceUrl={SourceUrl}", userId, recipe.Id, recipe.SourceUrl);
 
         await SendRecipeSummaryAsync(message.Chat.Id, recipe, language, cancellationToken);
+        logger.LogInformation("Recipe summary sent to chat {ChatId} for user {UserId}.", message.Chat.Id, userId);
     }
 
     private static bool TryExtractSupportedUrl(Message message, out Uri url)

@@ -20,8 +20,17 @@ public sealed class OpenAiRecipeTranslationService(
         string language,
         CancellationToken cancellationToken)
     {
+        logger.LogInformation(
+            "Translation requested. Language={Language}, TitleLength={TitleLength}, IngredientCount={IngredientCount}, StepCount={StepCount}, CategoryCount={CategoryCount}.",
+            language,
+            recipe.Title.Length,
+            recipe.Ingredients.Count,
+            recipe.Steps.Count,
+            categories.Count);
+
         if (string.IsNullOrWhiteSpace(language) || language.Equals("en", StringComparison.OrdinalIgnoreCase))
         {
+            logger.LogInformation("Skipping translation because target language is default English or empty.");
             return new TranslatedRecipe(recipe.Title, recipe.Description, recipe.Ingredients, recipe.Steps, categories);
         }
 
@@ -62,6 +71,7 @@ public sealed class OpenAiRecipeTranslationService(
         request.Content = new StringContent(JsonSerializer.Serialize(payload, JsonOptions), Encoding.UTF8, "application/json");
 
         using var response = await httpClient.SendAsync(request, cancellationToken);
+        logger.LogInformation("OpenAI translation response status: {StatusCode}.", response.StatusCode);
         if (!response.IsSuccessStatusCode)
         {
             logger.LogWarning("OpenAI translation failed with status {StatusCode}.", response.StatusCode);
@@ -87,9 +97,18 @@ public sealed class OpenAiRecipeTranslationService(
             return new TranslatedRecipe(recipe.Title, recipe.Description, recipe.Ingredients, recipe.Steps, categories);
         }
 
-        if (!HasValidIngredients(parsed.Ingredients, recipe.Ingredients) || !HasValidSteps(parsed.Steps, recipe.Steps))
+        var ingredientsValid = HasValidIngredients(parsed.Ingredients, recipe.Ingredients);
+        var stepsValid = HasValidSteps(parsed.Steps, recipe.Steps);
+        if (!ingredientsValid || !stepsValid)
         {
-            logger.LogWarning("OpenAI translation validation failed. Keeping original recipe text.");
+            logger.LogWarning(
+                "OpenAI translation validation failed. IngredientsValid={IngredientsValid}, StepsValid={StepsValid}, OriginalIngredients={OriginalIngredients}, TranslatedIngredients={TranslatedIngredients}, OriginalSteps={OriginalSteps}, TranslatedSteps={TranslatedSteps}. Keeping original recipe text.",
+                ingredientsValid,
+                stepsValid,
+                recipe.Ingredients.Count,
+                parsed.Ingredients?.Count ?? 0,
+                recipe.Steps.Count,
+                parsed.Steps?.Count ?? 0);
             return new TranslatedRecipe(recipe.Title, recipe.Description, recipe.Ingredients, recipe.Steps, categories);
         }
 
@@ -109,6 +128,12 @@ public sealed class OpenAiRecipeTranslationService(
             .Select(category => category.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList() ?? categories.ToList();
+
+        logger.LogInformation(
+            "OpenAI translation succeeded. TranslatedIngredients={IngredientCount}, TranslatedSteps={StepCount}, TranslatedCategories={CategoryCount}.",
+            translatedIngredients.Count,
+            translatedSteps.Count,
+            translatedCategories.Count);
 
         return new TranslatedRecipe(
             parsed.Title ?? recipe.Title,
