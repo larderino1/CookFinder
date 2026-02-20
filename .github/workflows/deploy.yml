@@ -13,9 +13,13 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      PACKAGE_NAME: cookfinder-${{ github.sha }}.tar.gz
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -32,8 +36,12 @@ jobs:
       - name: Publish
         run: dotnet publish src/CookFinder.Bot/CookFinder.Bot.csproj -c Release -o out --no-build
 
+      - name: Stamp build metadata
+        run: |
+          printf '%s' "${GITHUB_SHA}" > out/.build_commit
+
       - name: Package
-        run: tar -czf cookfinder.tar.gz -C out .
+        run: tar -czf "${PACKAGE_NAME}" -C out .
 
       - name: Upload package
         uses: appleboy/scp-action@v0.1.7
@@ -43,7 +51,7 @@ jobs:
           key: ${{ secrets.DO_SSH_KEY }}
           passphrase: ${{ secrets.DO_SSH_PASSPHRASE }}
           port: ${{ secrets.DO_SSH_PORT || 22 }}
-          source: cookfinder.tar.gz
+          source: ${{ env.PACKAGE_NAME }}
           target: /tmp
 
       - name: Deploy on Droplet
@@ -58,6 +66,8 @@ jobs:
             set -euo pipefail
             APP_DIR="${{ secrets.DO_APP_DIR }}"
             SERVICE_NAME="${{ secrets.DO_SERVICE_NAME }}"
+            PACKAGE_PATH="/tmp/${{ env.PACKAGE_NAME }}"
+            EXPECTED_COMMIT="${{ github.sha }}"
 
             if [ -z "$APP_DIR" ]; then
               echo "DO_APP_DIR secret is required"
@@ -69,6 +79,28 @@ jobs:
               exit 1
             fi
 
+            if [ ! -f "$PACKAGE_PATH" ]; then
+              echo "Package not found: $PACKAGE_PATH"
+              exit 1
+            fi
+
             mkdir -p "$APP_DIR"
-            tar -xzf /tmp/cookfinder.tar.gz -C "$APP_DIR"
+            find "$APP_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+            tar -xzf "$PACKAGE_PATH" -C "$APP_DIR"
+
+            if [ ! -f "$APP_DIR/.build_commit" ]; then
+              echo "Missing build stamp after extraction"
+              exit 1
+            fi
+
+            ACTUAL_COMMIT="$(cat "$APP_DIR/.build_commit")"
+            if [ "$ACTUAL_COMMIT" != "$EXPECTED_COMMIT" ]; then
+              echo "Build stamp mismatch. Expected $EXPECTED_COMMIT got $ACTUAL_COMMIT"
+              exit 1
+            fi
+
             sudo systemctl restart "$SERVICE_NAME"
+            sudo systemctl is-active --quiet "$SERVICE_NAME"
+
+            echo "Deployment successful: $SERVICE_NAME now running commit $ACTUAL_COMMIT"
+            rm -f "$PACKAGE_PATH"
