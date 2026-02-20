@@ -2,6 +2,7 @@ using CookFinder.Bot.Models;
 using CookFinder.Bot.Repositories;
 using CookFinder.Bot.Services.Localization;
 using CookFinder.Bot.Services.Recipes;
+using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -29,6 +30,8 @@ public sealed class TelegramBotService(
         "youtu.be",
         "instagram.com"
     };
+
+    private static readonly Regex UrlRegex = new(@"https?:\/\/\S+", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -242,7 +245,8 @@ public sealed class TelegramBotService(
     private static bool TryExtractSupportedUrl(string messageText, out Uri url)
     {
         url = null!;
-        var parts = messageText.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var parts = UrlRegex.Matches(messageText)
+            .Select(match => match.Value.TrimEnd('.', ',', ';', ':', '!', '?', ')', ']', '"', '\''));
 
         foreach (var part in parts)
         {
