@@ -27,6 +27,50 @@ jobs:
           dotnet-version: 10.0.x
           include-prerelease: true
 
+      - name: Setup doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DO_API_TOKEN }}
+
+      - name: Ensure droplet is running
+        env:
+          DO_HOST: ${{ secrets.DO_HOST }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$DO_HOST" ]; then
+            echo "DO_HOST secret is required"
+            exit 1
+          fi
+
+          DROPLET_ID="$(doctl compute droplet list --format ID,PublicIPv4 --no-header | awk -v host="$DO_HOST" '$2 == host { print $1; exit }')"
+          if [ -z "$DROPLET_ID" ]; then
+            echo "No droplet found with public IP: $DO_HOST"
+            exit 1
+          fi
+
+          STATUS="$(doctl compute droplet get "$DROPLET_ID" --format Status --no-header | tr -d '[:space:]')"
+          if [ "$STATUS" = "off" ]; then
+            echo "Droplet $DROPLET_ID is off. Powering on..."
+            doctl compute droplet-action power-on "$DROPLET_ID"
+          else
+            echo "Droplet $DROPLET_ID status is $STATUS"
+          fi
+
+          for i in $(seq 1 30); do
+            STATUS="$(doctl compute droplet get "$DROPLET_ID" --format Status --no-header | tr -d '[:space:]')"
+            if [ "$STATUS" = "active" ]; then
+              echo "Droplet is active"
+              exit 0
+            fi
+
+            echo "Waiting for droplet to become active (current: $STATUS)"
+            sleep 10
+          done
+
+          echo "Timed out waiting for droplet to become active"
+          exit 1
+
       - name: Restore
         run: dotnet restore src/CookFinder.Bot/CookFinder.Bot.csproj
 
